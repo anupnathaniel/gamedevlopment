@@ -1,0 +1,13 @@
+{
+  "name": "joseph-story-quest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "node tests/content.test.mjs"
+  },
+  "dependencies": {
+    "three": "0.165.0"
+  }
+}
