@@ -25,6 +25,7 @@ const state = {
   screen: 'landing',
   activeModuleId: modules[0].id,
   selectedMilestoneId: null,
+  mapMenuCollapsed: false,
   step: 'learn',
   quizProgress: createQuizProgress(),
   completed: new Set(),
@@ -37,22 +38,22 @@ const state = {
 let miniGame = null;
 
 const milestonePositions = [
-  { id: 'dreamer', x: 35, y: 7 },
-  { id: 'pit', x: 79.9, y: 19.2 },
-  { id: 'faithful', x: 41.7, y: 36.9 },
-  { id: 'prison', x: 78.3, y: 54.7 },
-  { id: 'palace', x: 35, y: 73.3 },
-  { id: 'reunion', x: 76.7, y: 90.4 }
+  { id: 'dreamer', x: 52.9, y: 12.4 },
+  { id: 'pit', x: 67.6, y: 32.8 },
+  { id: 'faithful', x: 63, y: 42.9 },
+  { id: 'prison', x: 60.7, y: 53.5 },
+  { id: 'palace', x: 60.8, y: 68.8 },
+  { id: 'reunion', x: 59.2, y: 85.4 }
 ];
 
 const josephModelPath =
-  './assets/characters/joseph-v2/Meshy_AI_Prince_in_a_Multicolo_biped_Animation_Walking_withSkin.glb';
+  './assets/characters/joseph-v2/Prince_in_a_Multicolo_biped_Animation_Walking_withSkin.glb';
 const josephRunModelPath =
-  './assets/characters/joseph-v2/Meshy_AI_Prince_in_a_Multicolo_biped_Animation_Running_withSkin.glb';
+  './assets/characters/joseph-v2/Prince_in_a_Multicolo_biped_Animation_Running_withSkin.glb';
 const josephJumpModelPath =
-  './assets/characters/joseph-v2/Meshy_AI_Prince_in_a_Multicolo_biped_Animation_Jump_Run_withSkin.glb';
+  './assets/characters/joseph-v2/Prince_in_a_Multicolo_biped_Animation_Jump_Run_withSkin.glb';
 const jacobModelPath =
-  './assets/characters/jacob/Meshy_AI_Wandering_Elder_with__biped_Character_output.glb';
+  './assets/characters/jacob/Wandering_Elder_with__biped_Character_output.glb';
 const environmentModelPaths = {
   mountain: './assets/environment/mountains/mountain_01.glb',
   tree: './assets/environment/trees/olive_tree_01.glb',
@@ -64,6 +65,7 @@ const animalModelPaths = {
   camel: './assets/animals/camel_walking.glb'
 };
 const gameAudioPath = './assets/audio/bg_game_audio_journey_of_promise.mp3';
+const starPickupAudioPath = './assets/audio/star-picked.wav';
 
 function activeModule() {
   return modules.find((module) => module.id === state.activeModuleId) || modules[0];
@@ -233,7 +235,10 @@ function landingView() {
 }
 
 function mapView() {
-  const selectedModule = modules.find((module) => module.id === state.selectedMilestoneId);
+  const selectedModule = modules.find((module) => module.id === state.selectedMilestoneId) || null;
+  const selectedIndex = selectedModule ? modules.findIndex((module) => module.id === selectedModule.id) : -1;
+  const selectedQuizComplete = selectedModule ? isModuleQuizComplete(selectedModule) : false;
+  const progressPercent = Math.round((state.completed.size / modules.length) * 100);
 
   return `
     <main class="map-shell">
@@ -246,88 +251,99 @@ function mapView() {
           </div>
         </div>
         <div class="map-status">
-          <span>${state.completed.size}/${modules.length}</span>
-          <small>milestones</small>
+          <span>${totalXp()} XP</span>
+          <small>Wisdom Points</small>
         </div>
       </header>
-      <section class="journey-map" aria-labelledby="map-title">
-        <header class="map-header">
-          <div>
-            <p class="map-kicker">Genesis 37-50</p>
-            <h1 id="map-title">Follow the Road to Egypt</h1>
+      <div class="map-layout ${state.mapMenuCollapsed ? 'menu-collapsed' : ''}">
+        <aside class="map-chapters ${state.mapMenuCollapsed ? 'collapsed' : ''}" aria-label="Journey chapters">
+          <button class="map-menu-toggle" data-toggle-map-menu aria-label="${state.mapMenuCollapsed ? 'Expand journey chapters' : 'Collapse journey chapters'}">
+            <span>${state.mapMenuCollapsed ? '›' : '‹'}</span>
+          </button>
+          <p class="map-panel-title">Journey Chapters</p>
+          <div class="map-chapter-list">
+            ${modules
+              .map(
+                (module, index) => `
+                  <button class="map-chapter ${module.id === selectedModule?.id ? 'active' : ''}" data-milestone="${module.id}">
+                    <span class="map-chapter-number">${index + 1}</span>
+                    <span>
+                      <strong>${module.milestoneTitle}</strong>
+                      <small>${module.reference}</small>
+                    </span>
+                  </button>
+                `
+              )
+              .join('')}
           </div>
-        </header>
+          <div class="map-progress-card">
+            <small>Your Progress</small>
+            <strong>${progressPercent}%</strong>
+            <span>Journey Complete</span>
+            <div class="map-progress-track"><span style="width: ${progressPercent}%"></span></div>
+            <p>"You meant evil against me, but God meant it for good."</p>
+            <small>Genesis 50:20</small>
+          </div>
+        </aside>
 
-        <div class="map-board">
-          <svg class="map-illustration" viewBox="0 0 720 1900" preserveAspectRatio="none" aria-hidden="true">
-            <path class="coast-line" d="M640 0 C600 210 675 340 610 520 C544 704 642 850 570 1058 C520 1204 585 1410 548 1600 C522 1732 542 1828 586 1900" />
-            <path class="river-line" d="M515 0 C508 150 535 270 512 410 C486 568 530 668 495 818 C455 995 535 1148 488 1320 C448 1467 492 1610 460 1900" />
-            <path class="region-line" d="M36 1280 C146 1205 256 1220 350 1134 C448 1045 510 1058 635 982" />
-            <path class="region-line faint" d="M24 430 C130 370 240 390 336 304 C448 206 540 230 704 150" />
-            <path class="route-shadow" d="M252 130 C390 238 520 246 575 364 C650 526 372 560 300 702 C236 830 506 912 564 1040 C636 1200 332 1242 252 1392 C178 1530 474 1580 552 1718 C592 1794 498 1852 412 1888" />
-            <path class="route-line" d="M252 130 C390 238 520 246 575 364 C650 526 372 560 300 702 C236 830 506 912 564 1040 C636 1200 332 1242 252 1392 C178 1530 474 1580 552 1718 C592 1794 498 1852 412 1888" />
-            <text x="470" y="214" class="map-label">CANAAN</text>
-            <text x="130" y="1544" class="map-label large">EGYPT</text>
-            <text x="532" y="874" class="map-label small">Wilderness Road</text>
-            <text x="92" y="1830" class="map-label small">Storehouses</text>
-          </svg>
+        <section class="journey-map" aria-labelledby="map-title">
+          <header class="map-header">
+            <p class="map-kicker">Genesis 37-50</p>
+            <h1 id="map-title">Follow Joseph's Journey to Egypt</h1>
+          </header>
 
-          ${milestonePositions
-            .map((point, index) => {
-              const module = modules.find((item) => item.id === point.id);
-              const locked = index > 0 && !state.completed.has(modules[index - 1].id);
-              return `
-                <button
-                  class="milestone ${state.completed.has(point.id) ? 'completed' : ''} ${locked ? 'locked' : ''}"
-                  style="left: ${point.x}%; top: ${point.y}%"
-                  data-milestone="${point.id}"
-                  aria-label="${module.milestoneTitle}, ${module.reference}"
-                >
-                  <span class="milestone-pin">
-                    <span class="pin-symbol">${locked ? 'lock' : 'pin'}</span>
-                    <span>${index + 1}</span>
-                  </span>
-                  <span class="milestone-copy">
-                    <strong>${module.milestoneTitle}</strong>
-                    <small>${module.milestonePlace}</small>
-                  </span>
-                </button>
-              `;
-            })
-            .join('')}
-        </div>
-
-      </section>
-      ${selectedModule ? milestoneDialog(selectedModule) : ''}
+          <div class="map-board">
+            ${milestonePositions
+              .map((point, index) => {
+                const module = modules.find((item) => item.id === point.id);
+                return `
+                  <button
+                    class="milestone ${module.id === selectedModule?.id ? 'active' : ''} ${state.completed.has(point.id) ? 'completed' : ''}"
+                    style="left: ${point.x}%; top: ${point.y}%"
+                    data-milestone="${point.id}"
+                    aria-label="${module.milestoneTitle}, ${module.reference}"
+                  >
+                    <span class="milestone-pin">
+                      <span>${index + 1}</span>
+                    </span>
+                    <span class="milestone-copy">
+                      <strong>${module.milestoneTitle}</strong>
+                      <small>${module.reference}</small>
+                    </span>
+                  </button>
+                `;
+              })
+              .join('')}
+          </div>
+        </section>
+      </div>
+      ${
+        selectedModule
+          ? `
+            <button class="map-detail-backdrop" data-close-map-detail aria-label="Close milestone details"></button>
+            <aside class="map-detail-card" aria-label="Selected milestone">
+              <button class="map-detail-close" data-close-map-detail aria-label="Close milestone details">&times;</button>
+              <img src="${selectedModule.art}" alt="" />
+              <p class="map-kicker">${selectedModule.reference}</p>
+              <h2>${selectedModule.milestoneTitle}</h2>
+              <p>${selectedModule.summary}</p>
+              <div class="map-rewards">
+                <span><strong>+${xpRewards.question} XP</strong><small>Wisdom Points</small></span>
+                <span><strong>${selectedQuizComplete ? 'Ready' : 'Locked'}</strong><small>3D Journey</small></span>
+              </div>
+              <button class="primary-action" data-start-module="${selectedModule.id}">Continue Story</button>
+              <button class="ghost-action" data-start-game="${selectedModule.id}" ${!selectedQuizComplete || selectedModule.game.type !== 'collect' ? 'disabled' : ''}>Enter 3D Challenge</button>
+            </aside>
+          `
+          : ''
+      }
+      <nav class="map-bottom-nav" aria-label="Quest sections">
+        <span>Bible Stories</span>
+        <span class="active">Journey Map</span>
+        <span>Wisdom Points · ${totalXp()} XP</span>
+        <span>Achievements</span>
+      </nav>
     </main>
-  `;
-}
-
-function milestoneDialog(module) {
-  const moduleNumber = modules.findIndex((item) => item.id === module.id) + 1;
-
-  return `
-    <div class="dialog-backdrop" role="presentation" data-close-dialog></div>
-    <section class="milestone-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-      <button class="dialog-close" data-close-dialog aria-label="Close milestone details">&times;</button>
-      <div class="dialog-art">
-        <img class="dialog-art-image" src="${module.art}" alt="" />
-        <span>Milestone ${moduleNumber} · ${module.milestonePlace}</span>
-      </div>
-      <div class="dialog-body">
-        <p class="map-kicker">${module.reference}</p>
-        <h2 id="dialog-title">${module.milestoneTitle}</h2>
-        <p class="dialog-summary">${module.summary}</p>
-        <figure class="scripture-card">
-          <blockquote>${module.scripture}</blockquote>
-          <figcaption>${module.scriptureReference}</figcaption>
-        </figure>
-      </div>
-      <div class="dialog-actions">
-        <button class="landing-action compact" data-start-module="${module.id}">Test Your Knowledge</button>
-        <button class="ghost-action" data-close-dialog>Stay on Map</button>
-      </div>
-    </section>
   `;
 }
 
@@ -560,13 +576,19 @@ function bindEvents() {
     });
   });
 
+  document.querySelectorAll('[data-toggle-map-menu]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setState({ mapMenuCollapsed: !state.mapMenuCollapsed });
+    });
+  });
+
   document.querySelectorAll('[data-milestone]').forEach((button) => {
     button.addEventListener('click', () => {
       setState({ selectedMilestoneId: button.dataset.milestone });
     });
   });
 
-  document.querySelectorAll('[data-close-dialog]').forEach((button) => {
+  document.querySelectorAll('[data-close-map-detail]').forEach((button) => {
     button.addEventListener('click', () => {
       setState({ selectedMilestoneId: null });
     });
@@ -579,6 +601,20 @@ function bindEvents() {
         selectedMilestoneId: null,
         activeModuleId: button.dataset.startModule,
         step: 'learn',
+        gameStatus: 'idle',
+        collected: 0,
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-start-game]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (button.disabled) return;
+      setState({
+        screen: 'modules',
+        selectedMilestoneId: null,
+        activeModuleId: button.dataset.startGame,
+        step: 'game',
         gameStatus: 'idle',
         collected: 0,
       });
@@ -1031,7 +1067,7 @@ function createCollectGame(stage, module) {
   let jacobResponseTimer = null;
   let animationFrame = null;
   let backgroundMusic = null;
-  let pickupAudioContext = null;
+  let starPickupAudio = null;
   let speechVoicesReady = null;
   let jacobSpeechRequestId = 0;
 
@@ -1054,7 +1090,6 @@ function createCollectGame(stage, module) {
       if (muted) {
         backgroundMusic.pause();
       } else if (running) {
-        resumePickupAudio();
         backgroundMusic.play().catch(() => {});
       }
     }
@@ -1077,46 +1112,19 @@ function createCollectGame(stage, module) {
     backgroundMusic.currentTime = 0;
   };
 
-  const resumePickupAudio = () => {
-    if (state.audioMuted) return;
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!pickupAudioContext) pickupAudioContext = new AudioContextClass();
-    if (pickupAudioContext.state === 'suspended') pickupAudioContext.resume().catch(() => {});
+  const preloadStarPickupSound = () => {
+    if (starPickupAudio) return;
+    starPickupAudio = new Audio(starPickupAudioPath);
+    starPickupAudio.preload = 'auto';
+    starPickupAudio.volume = 0.72;
+    starPickupAudio.load();
   };
 
   const playStarChime = () => {
-    if (state.audioMuted || !pickupAudioContext) return;
-    const context = pickupAudioContext;
-    const now = context.currentTime;
-    const output = context.createGain();
-    const tone = context.createOscillator();
-    const shimmer = context.createOscillator();
-
-    output.gain.setValueAtTime(0.0001, now);
-    output.gain.exponentialRampToValueAtTime(0.085, now + 0.025);
-    output.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
-
-    tone.type = 'sine';
-    tone.frequency.setValueAtTime(880, now);
-    tone.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
-
-    shimmer.type = 'triangle';
-    shimmer.frequency.setValueAtTime(1760, now);
-    shimmer.frequency.exponentialRampToValueAtTime(1180, now + 0.26);
-
-    tone.connect(output);
-    shimmer.connect(output);
-    output.connect(context.destination);
-    tone.start(now);
-    shimmer.start(now + 0.018);
-    tone.stop(now + 0.6);
-    shimmer.stop(now + 0.42);
-    tone.onended = () => {
-      tone.disconnect();
-      shimmer.disconnect();
-      output.disconnect();
-    };
+    if (state.audioMuted || !starPickupAudio) return;
+    const sound = starPickupAudio.cloneNode();
+    sound.volume = 0.72;
+    sound.play().catch(() => {});
   };
 
   const loadSpeechVoices = () => {
@@ -1502,7 +1510,7 @@ function createCollectGame(stage, module) {
         star.visible = true;
       });
       if (!state.audioMuted) {
-        resumePickupAudio();
+        preloadStarPickupSound();
         loadSpeechVoices();
         startBackgroundMusic();
       }
@@ -1627,12 +1635,12 @@ function createAnimalScene(starPositions, jacobPosition) {
   const finalStar = new THREE.Vector3(starPositions[5][0], 0.02, starPositions[5][1]);
   const deliveryStar = new THREE.Vector3(starPositions[6][0], 0.02, starPositions[6][1]);
   const flockPlacements = [
-    { center: finalStar, offset: [1.1, -0.9], radius: 0.95, speed: 0.74, phase: 0.2, scale: 0.78 },
-    { center: finalStar, offset: [2.4, 1.2], radius: 0.9, speed: 0.82, phase: 1.5, scale: 0.82 },
-    { center: finalStar, offset: [5.1, -1.5], radius: 1.05, speed: 0.7, phase: 2.6, scale: 0.8 },
-    { center: deliveryStar, offset: [0.6, 1.1], radius: 0.95, speed: 0.76, phase: 3.7, scale: 0.76 },
-    { center: new THREE.Vector3(jacobPosition.x - 1.8, 0.02, jacobPosition.z + 1.8), offset: [0, 0], radius: 1.15, speed: 0.64, phase: 4.6, scale: 0.84 },
-    { center: new THREE.Vector3(jacobPosition.x - 3.5, 0.02, jacobPosition.z + 4.1), offset: [0, 0], radius: 0.9, speed: 0.88, phase: 5.4, scale: 0.78 }
+    { center: finalStar, offset: [1.1, -0.9], radius: 0.95, speed: 0.74, phase: 0.2, scale: 0.86 },
+    { center: finalStar, offset: [2.4, 1.2], radius: 0.9, speed: 0.82, phase: 1.5, scale: 0.9 },
+    { center: finalStar, offset: [5.1, -1.5], radius: 1.05, speed: 0.7, phase: 2.6, scale: 0.88 },
+    { center: deliveryStar, offset: [0.6, 1.1], radius: 0.95, speed: 0.76, phase: 3.7, scale: 0.84 },
+    { center: new THREE.Vector3(jacobPosition.x - 1.8, 0.02, jacobPosition.z + 1.8), offset: [0, 0], radius: 1.15, speed: 0.64, phase: 4.6, scale: 0.92 },
+    { center: new THREE.Vector3(jacobPosition.x - 3.5, 0.02, jacobPosition.z + 4.1), offset: [0, 0], radius: 0.9, speed: 0.88, phase: 5.4, scale: 0.86 }
   ];
 
   flockPlacements.forEach((placement) => {
@@ -1640,7 +1648,7 @@ function createAnimalScene(starPositions, jacobPosition) {
     const animal = createAnimalSlot({
       type: 'sheep',
       fallback: createSheep(),
-      height: 0.95,
+      height: 1.08,
       position: [center.x + Math.cos(placement.phase) * placement.radius, 0.02, center.z + Math.sin(placement.phase) * placement.radius],
       rotation: placement.phase,
       scale: placement.scale,
@@ -1660,15 +1668,15 @@ function createAnimalScene(starPositions, jacobPosition) {
   });
 
   const standingSheepPlacements = [
-    { x: starPositions[0][0] - 1.3, z: starPositions[0][1] + 1.2, rotation: 0.9, scale: 0.8 },
-    { x: starPositions[2][0] + 1.25, z: starPositions[2][1] - 1.2, rotation: -0.35, scale: 0.76 }
+    { x: starPositions[0][0] - 1.3, z: starPositions[0][1] + 1.2, rotation: 0.9, scale: 0.9 },
+    { x: starPositions[2][0] + 1.25, z: starPositions[2][1] - 1.2, rotation: -0.35, scale: 0.86 }
   ];
 
   standingSheepPlacements.forEach((placement, index) => {
     const animal = createAnimalSlot({
       type: 'sheep',
       fallback: createSheep(),
-      height: 0.92,
+      height: 1.04,
       position: [placement.x, 0.02, placement.z],
       rotation: placement.rotation,
       scale: placement.scale,
@@ -1682,17 +1690,17 @@ function createAnimalScene(starPositions, jacobPosition) {
   const camel = createAnimalSlot({
     type: 'camel',
     fallback: createCamel(),
-    height: 2.15,
+    height: 2.75,
     position: [starPositions[3][0] + 2.4, 0.05, starPositions[3][1] - 2.2],
     rotation: -0.65,
-    scale: 0.9,
+    scale: 0.98,
     animated: true,
     moving: {
       center: new THREE.Vector3(starPositions[3][0] + 2.4, 0.05, starPositions[3][1] - 2.2),
       radius: 1.6,
       speed: 0.36,
       phase: 1.2,
-      collisionRadius: 1.7,
+      collisionRadius: 1.95,
       pushStrength: 1.9
     }
   });
@@ -1701,13 +1709,13 @@ function createAnimalScene(starPositions, jacobPosition) {
   group.add(camel.group);
 
   [
-    { x: starPositions[3][0] + 0.5, z: starPositions[3][1] - 3.4, rotation: -1.1, scale: 0.72 },
-    { x: starPositions[3][0] + 4.4, z: starPositions[3][1] - 0.8, rotation: -0.2, scale: 0.78 }
+    { x: starPositions[3][0] + 0.5, z: starPositions[3][1] - 3.4, rotation: -1.1, scale: 0.82 },
+    { x: starPositions[3][0] + 4.4, z: starPositions[3][1] - 0.8, rotation: -0.2, scale: 0.88 }
   ].forEach((placement, index) => {
     const animal = createAnimalSlot({
       type: 'sheep',
       fallback: createSheep(),
-      height: 0.9,
+      height: 1.03,
       position: [placement.x, 0.02, placement.z],
       rotation: placement.rotation,
       scale: placement.scale,
@@ -2010,6 +2018,108 @@ function createGrassArenaGround(starPositions, jacobPosition) {
   const grassTufts = createGrassTufts(starPositions, jacobPosition);
   group.add(grassTufts);
 
+  const campDecorations = createCampDecorations();
+  group.add(campDecorations);
+
+  return group;
+}
+
+function createCampDecorations() {
+  const group = new THREE.Group();
+  const palmPlacements = [
+    { x: -23, z: -27, height: 5.8, rotation: 0.2 },
+    { x: -28, z: 15, height: 5.2, rotation: -0.7 },
+    { x: 24, z: -27, height: 6.1, rotation: 0.8 },
+    { x: 28, z: 14, height: 5.4, rotation: -1.1 },
+    { x: 10, z: 30, height: 5.7, rotation: 1.5 },
+    { x: -6, z: -31, height: 5.1, rotation: -2.3 }
+  ];
+  const tentPlacements = [
+    { x: -27, z: -7, scale: 1.35, rotation: 0.5 },
+    { x: -21, z: -10, scale: 1.05, rotation: 0.25 },
+    { x: 23, z: 24, scale: 1.2, rotation: -0.75 }
+  ];
+
+  palmPlacements.forEach((placement) => {
+    const palm = createPalmTree(placement.height);
+    palm.position.set(placement.x, 0.02, placement.z);
+    palm.rotation.y = placement.rotation;
+    group.add(palm);
+  });
+
+  tentPlacements.forEach((placement) => {
+    const tent = createTent(placement.scale);
+    tent.position.set(placement.x, 0.02, placement.z);
+    tent.rotation.y = placement.rotation;
+    group.add(tent);
+  });
+
+  return group;
+}
+
+function createPalmTree(height = 5.5) {
+  const group = new THREE.Group();
+  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x76502e, roughness: 0.88 });
+  const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x3f6f35, roughness: 0.78, side: THREE.DoubleSide });
+  const fruitMaterial = new THREE.MeshStandardMaterial({ color: 0x7a4a24, roughness: 0.84 });
+
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, height, 9), trunkMaterial);
+  trunk.position.y = height / 2;
+  trunk.rotation.z = 0.08;
+  trunk.castShadow = true;
+  trunk.receiveShadow = true;
+  group.add(trunk);
+
+  const crownY = height + 0.08;
+  for (let i = 0; i < 9; i += 1) {
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.22, 2.25, 4), leafMaterial);
+    const angle = (i / 9) * Math.PI * 2;
+    leaf.position.set(Math.cos(angle) * 0.58, crownY, Math.sin(angle) * 0.58);
+    leaf.rotation.z = Math.PI / 2.5;
+    leaf.rotation.y = -angle;
+    leaf.scale.set(0.7, 1, 0.16);
+    leaf.castShadow = true;
+    group.add(leaf);
+  }
+
+  [-0.16, 0.02, 0.18].forEach((x, index) => {
+    const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), fruitMaterial);
+    fruit.position.set(x, crownY - 0.2, 0.08 + index * 0.08);
+    fruit.castShadow = true;
+    group.add(fruit);
+  });
+
+  return group;
+}
+
+function createTent(scale = 1) {
+  const group = new THREE.Group();
+  const clothMaterial = new THREE.MeshStandardMaterial({ color: 0xb88955, roughness: 0.86, side: THREE.DoubleSide });
+  const darkClothMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4429, roughness: 0.9, side: THREE.DoubleSide });
+  const ropeMaterial = new THREE.MeshStandardMaterial({ color: 0x3a2818, roughness: 0.82 });
+
+  const canvas = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.1, 4), clothMaterial);
+  canvas.scale.set(1.35, 0.78, 0.92);
+  canvas.rotation.y = Math.PI / 4;
+  canvas.position.y = 0.58;
+  canvas.castShadow = true;
+  canvas.receiveShadow = true;
+  group.add(canvas);
+
+  const entrance = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.62), darkClothMaterial);
+  entrance.position.set(0, 0.38, 0.98);
+  entrance.rotation.x = -0.06;
+  group.add(entrance);
+
+  [-0.8, 0.8].forEach((x) => {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.15, 6), ropeMaterial);
+    pole.position.set(x, 0.58, 0.86);
+    pole.rotation.z = x > 0 ? -0.12 : 0.12;
+    pole.castShadow = true;
+    group.add(pole);
+  });
+
+  group.scale.setScalar(scale);
   return group;
 }
 
