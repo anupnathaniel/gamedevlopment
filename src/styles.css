@@ -1,18 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Lora:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap");
+
 :root {
   color-scheme: light;
-  --ink: #18212f;
-  --muted: #5f6d7c;
-  --paper: #f7f4ed;
-  --surface: #ffffff;
-  --line: #d9d2c5;
-  --teal: #167c80;
-  --teal-dark: #0f5558;
-  --gold: #d99b25;
-  --rose: #b84c5f;
-  --green: #487847;
-  --shadow: 0 20px 50px rgba(24, 33, 47, 0.14);
+  --ink: #1e2a3a;
+  --navy: #1e2a3a;
+  --deep: #101927;
+  --charcoal: #2f3e46;
+  --teal: #3e5c5a;
+  --teal-dark: #2f4c4a;
+  --muted: #735f45;
+  --paper: #f5e9d2;
+  --paper-deep: #ead6b0;
+  --surface: #f5e9d2;
+  --line: rgba(139, 94, 52, 0.34);
+  --gold: #d4af37;
+  --bronze: #8b5e34;
+  --clay: #b23a2e;
+  --rose: #b23a2e;
+  --green: #7a8a6b;
+  --paper-edge: rgba(139, 94, 52, 0.22);
+  --shadow: 0 22px 58px rgba(30, 42, 58, 0.22);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    Inter, "Source Sans 3", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -25,8 +34,10 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    linear-gradient(135deg, rgba(22, 124, 128, 0.1), transparent 36%),
-    linear-gradient(315deg, rgba(217, 155, 37, 0.16), transparent 38%),
+    radial-gradient(circle at 18% 10%, rgba(212, 175, 55, 0.16), transparent 34%),
+    radial-gradient(circle at 90% 18%, rgba(178, 58, 46, 0.08), transparent 30%),
+    linear-gradient(135deg, rgba(139, 94, 52, 0.08), transparent 36%),
+    linear-gradient(315deg, rgba(62, 92, 90, 0.08), transparent 38%),
     var(--paper);
   color: var(--ink);
 }
@@ -35,10 +46,19 @@ button {
   font: inherit;
 }
 
+h1,
+h2,
+.brand p,
+.map-brand strong,
+.milestone-copy strong {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  letter-spacing: 0;
+}
+
 .landing-shell {
   min-height: 100vh;
-  background: #15100b;
-  color: #f6f0e8;
+  background: var(--deep);
+  color: #f5e9d2;
   overflow: hidden;
 }
 
@@ -50,8 +70,8 @@ button {
   padding: 32px;
   isolation: isolate;
   background:
-    linear-gradient(180deg, rgba(8, 7, 6, 0.2), rgba(8, 7, 6, 0.84)),
-    radial-gradient(circle at 50% 44%, rgba(78, 59, 38, 0.18), rgba(5, 5, 4, 0.78) 72%),
+    linear-gradient(180deg, rgba(30, 42, 58, 0.08), rgba(16, 25, 39, 0.9)),
+    radial-gradient(circle at 52% 42%, rgba(212, 175, 55, 0.18), rgba(16, 25, 39, 0.8) 72%),
     url("../assets/canaan-map.png") center / cover no-repeat;
 }
 
@@ -75,30 +95,33 @@ button {
 
 .landing-kicker {
   margin: 0 0 32px;
-  color: rgba(255, 255, 255, 0.78);
-  font-family: "Courier New", ui-monospace, monospace;
+  color: rgba(234, 214, 176, 0.8);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(0.78rem, 1.4vw, 1.15rem);
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
 .landing-content h1 {
   margin: 0;
-  color: #fffaf2;
-  font-family: Georgia, "Times New Roman", serif;
+  color: #f5e9d2;
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
   font-size: clamp(3.5rem, 6.6vw, 7.2rem);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 0.95;
   text-wrap: balance;
   white-space: nowrap;
-  text-shadow: 0 18px 44px rgba(0, 0, 0, 0.52);
+  text-shadow:
+    0 2px 0 rgba(139, 94, 52, 0.48),
+    0 18px 44px rgba(0, 0, 0, 0.52);
 }
 
 .landing-copy {
   max-width: 1120px;
   margin: 42px 0 0;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(245, 233, 210, 0.72);
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.25rem, 2.1vw, 2rem);
   line-height: 1.56;
   text-wrap: balance;
@@ -111,21 +134,25 @@ button {
   padding: 0 34px;
   border: 0;
   border-radius: 18px;
-  background: rgba(247, 247, 247, 0.94);
-  color: #1d1813;
+  border: 1px solid rgba(212, 175, 55, 0.58);
+  background: linear-gradient(180deg, #d4af37, #8b5e34);
+  color: #fff7df;
   cursor: pointer;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.15rem, 1.7vw, 1.45rem);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 18px 36px rgba(0, 0, 0, 0.28);
 }
 
 .landing-action:hover {
-  background: #fff;
+  background: linear-gradient(180deg, #e0bd47, #966638);
 }
 
 .landing-note {
   margin: 50px 0 0;
-  color: rgba(255, 255, 255, 0.52);
+  color: rgba(234, 214, 176, 0.58);
   font-size: clamp(0.95rem, 1.5vw, 1.35rem);
 }
 
@@ -149,8 +176,8 @@ button {
   gap: 18px;
   min-height: 72px;
   padding: 10px clamp(18px, 7vw, 160px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(7, 8, 9, 0.93);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+  background: rgba(16, 25, 39, 0.95);
   backdrop-filter: blur(10px);
 }
 
@@ -166,9 +193,10 @@ button {
   height: 34px;
   place-items: center;
   border-radius: 999px;
-  background: #efefef;
-  color: #161616;
-  font-family: Georgia, "Times New Roman", serif;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  background: linear-gradient(180deg, #f5e9d2, #cba06a);
+  color: var(--navy);
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
   font-weight: 800;
 }
 
@@ -180,14 +208,14 @@ button {
 }
 
 .map-brand strong {
-  font-family: Georgia, "Times New Roman", serif;
+  color: #f5e9d2;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .map-brand small,
 .map-status small {
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(234, 214, 176, 0.62);
   font-size: 0.72rem;
 }
 
@@ -195,7 +223,7 @@ button {
   display: grid;
   min-width: 78px;
   justify-items: end;
-  color: rgba(255, 255, 255, 0.82);
+  color: #d4af37;
 }
 
 .map-status span {
@@ -216,20 +244,19 @@ button {
 
 .map-kicker {
   margin: 0;
-  color: rgba(255, 255, 255, 0.52);
-  font-family: "Courier New", ui-monospace, monospace;
+  color: rgba(245, 233, 210, 0.62);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .map-header h1 {
   margin: 5px 0 0;
-  color: #fff8ec;
-  font-family: Georgia, "Times New Roman", serif;
+  color: #f5e9d2;
   font-size: clamp(1.35rem, 3vw, 2.15rem);
-  font-weight: 500;
+  font-weight: 800;
   line-height: 1;
   text-shadow: 0 8px 22px rgba(0, 0, 0, 0.32);
 }
@@ -274,12 +301,12 @@ button {
 }
 
 .route-shadow {
-  stroke: rgba(24, 27, 30, 0.92);
+  stroke: rgba(16, 25, 39, 0.94);
   stroke-width: 18;
 }
 
 .route-line {
-  stroke: rgba(215, 210, 196, 0.76);
+  stroke: rgba(245, 233, 210, 0.78);
   stroke-dasharray: 2 10;
   stroke-width: 4;
 }
@@ -321,11 +348,11 @@ button {
   width: 70px;
   height: 70px;
   place-items: center;
-  border: 4px solid rgba(31, 33, 35, 0.95);
+  border: 4px solid rgba(30, 42, 58, 0.95);
   border-radius: 999px;
-  background: #e9e9e7;
-  color: #17191b;
-  font-family: Georgia, "Times New Roman", serif;
+  background: linear-gradient(180deg, #f5e9d2, #dcb977);
+  color: var(--navy);
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
   font-size: 1.05rem;
   font-weight: 800;
   box-shadow:
@@ -338,8 +365,8 @@ button {
 }
 
 .milestone.locked .milestone-pin {
-  background: #2c3032;
-  color: rgba(255, 255, 255, 0.72);
+  background: #2f3e46;
+  color: rgba(245, 233, 210, 0.74);
 }
 
 .milestone.locked .pin-symbol {
@@ -355,8 +382,8 @@ button {
 }
 
 .milestone.completed .milestone-pin {
-  background: #e8ecd9;
-  color: #233514;
+  background: linear-gradient(180deg, #d4af37, #7a8a6b);
+  color: #fff8e5;
 }
 
 .milestone-copy {
@@ -380,15 +407,14 @@ button {
 .milestone-copy strong {
   max-width: 190px;
   color: #fff8ed;
-  font-family: Georgia, "Times New Roman", serif;
   font-size: 1.02rem;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.05;
 }
 
 .milestone-copy small {
-  color: rgba(255, 255, 255, 0.54);
-  font-family: "Courier New", ui-monospace, monospace;
+  color: rgba(234, 214, 176, 0.62);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -418,9 +444,9 @@ button {
   max-height: calc(100vh - 32px);
   overflow: hidden;
   flex-direction: column;
-  border: 1px solid rgba(185, 124, 46, 0.56);
+  border: 1px solid rgba(212, 175, 55, 0.5);
   border-radius: 22px;
-  background: #111;
+  background: var(--deep);
   color: #f8f4ec;
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.58);
   transform: translate(-50%, -50%);
@@ -431,14 +457,14 @@ button {
   height: clamp(150px, 24vh, 230px);
   border-radius: 21px 21px 0 0;
   overflow: hidden;
-  background: #17110c;
+  background: var(--deep);
   flex: 0 0 auto;
 }
 
 .dialog-art::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(17, 17, 17, 0.88));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(16, 25, 39, 0.9));
   content: "";
 }
 
@@ -454,8 +480,8 @@ button {
   position: absolute;
   left: clamp(26px, 5vw, 44px);
   bottom: 20px;
-  color: rgba(0, 0, 0, 0.46);
-  font-family: "Courier New", ui-monospace, monospace;
+  color: rgba(245, 233, 210, 0.62);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.26em;
@@ -472,10 +498,9 @@ button {
 
 .milestone-dialog h2 {
   margin: 0;
-  color: #fff;
-  font-family: Georgia, "Times New Roman", serif;
+  color: #f5e9d2;
   font-size: clamp(1.9rem, 3.9vw, 3.1rem);
-  font-weight: 500;
+  font-weight: 800;
   line-height: 1;
 }
 
@@ -488,7 +513,8 @@ button {
 }
 
 .dialog-summary {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(245, 233, 210, 0.78);
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(0.95rem, 1.45vw, 1.18rem);
   line-height: 1.42;
 }
@@ -496,15 +522,15 @@ button {
 .scripture-card {
   margin: 0;
   padding: clamp(16px, 2.5vw, 22px);
-  border-left: 4px solid rgba(255, 255, 255, 0.88);
+  border-left: 4px solid var(--gold);
   border-radius: 12px;
-  background: #202020;
+  background: rgba(245, 233, 210, 0.08);
 }
 
 .scripture-card blockquote {
   margin: 0;
-  color: #fff;
-  font-family: Georgia, "Times New Roman", serif;
+  color: #fff7df;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.05rem, 2vw, 1.45rem);
   font-style: italic;
   line-height: 1.42;
@@ -512,8 +538,8 @@ button {
 
 .scripture-card figcaption {
   margin-top: 12px;
-  color: rgba(255, 255, 255, 0.72);
-  font-family: "Courier New", ui-monospace, monospace;
+  color: rgba(234, 214, 176, 0.72);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -531,9 +557,9 @@ button {
   min-height: 50px;
   margin: 0;
   border-radius: 12px;
-  background: rgba(247, 247, 247, 0.94);
-  color: #1d1813;
-  font-family: Georgia, "Times New Roman", serif;
+  background: linear-gradient(180deg, #d4af37, #8b5e34);
+  color: #fff7df;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1rem, 1.5vw, 1.12rem);
   font-weight: 500;
 }
@@ -542,9 +568,9 @@ button {
   width: 100%;
   min-height: 48px;
   justify-content: center;
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.78);
+  border-color: rgba(245, 233, 210, 0.16);
+  background: rgba(245, 233, 210, 0.08);
+  color: rgba(245, 233, 210, 0.8);
 }
 
 .dialog-close {
@@ -569,6 +595,10 @@ button {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(212, 175, 55, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(62, 92, 90, 0.12), transparent 32%),
+    var(--paper);
 }
 
 .module-rail {
@@ -576,8 +606,12 @@ button {
   flex-direction: column;
   gap: 24px;
   padding: 24px;
-  border-right: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.72);
+  border-right: 1px solid rgba(212, 175, 55, 0.22);
+  background:
+    linear-gradient(180deg, rgba(30, 42, 58, 0.98), rgba(16, 25, 39, 0.98)),
+    var(--navy);
+  color: #f5e9d2;
+  box-shadow: 18px 0 44px rgba(30, 42, 58, 0.16);
 }
 
 .brand {
@@ -591,9 +625,10 @@ button {
   width: 44px;
   height: 44px;
   place-items: center;
-  border-radius: 8px;
-  background: var(--teal);
-  color: #fff;
+  border: 1px solid rgba(212, 175, 55, 0.46);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f5e9d2, #cba06a);
+  color: var(--navy);
   font-size: 1.5rem;
   font-weight: 800;
 }
@@ -604,14 +639,19 @@ button {
 }
 
 .brand p {
+  color: #f5e9d2;
   font-weight: 800;
 }
 
 .brand span,
 .module-tab small,
-.eyebrow,
-.progress-card small {
+.eyebrow {
   color: var(--muted);
+}
+
+.module-rail .brand span,
+.module-rail .module-tab small {
+  color: rgba(234, 214, 176, 0.64);
 }
 
 .module-list {
@@ -624,20 +664,21 @@ button {
   gap: 2px;
   margin-top: auto;
   padding: 14px;
-  border: 1px solid rgba(217, 155, 37, 0.34);
+  border: 1px solid rgba(212, 175, 55, 0.34);
   border-radius: 8px;
-  background: #fff7e4;
-  color: #73520f;
+  background:
+    linear-gradient(180deg, rgba(245, 233, 210, 0.95), rgba(234, 214, 176, 0.92));
+  color: var(--bronze);
 }
 
 .xp-summary span {
-  color: var(--ink);
+  color: var(--navy);
   font-size: 1.65rem;
   font-weight: 900;
 }
 
 .xp-summary small {
-  color: #7c6330;
+  color: var(--bronze);
   font-weight: 800;
 }
 
@@ -651,15 +692,15 @@ button {
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: var(--ink);
+  color: #f5e9d2;
   text-align: left;
   cursor: pointer;
 }
 
 .module-tab.active,
 .module-tab:hover {
-  border-color: var(--line);
-  background: var(--surface);
+  border-color: rgba(212, 175, 55, 0.42);
+  background: rgba(245, 233, 210, 0.08);
 }
 
 .module-number {
@@ -667,10 +708,16 @@ button {
   width: 34px;
   height: 34px;
   place-items: center;
-  border-radius: 8px;
-  background: #e7efe8;
-  color: var(--green);
+  border: 1px solid rgba(212, 175, 55, 0.34);
+  border-radius: 999px;
+  background: rgba(245, 233, 210, 0.08);
+  color: #d4af37;
   font-weight: 800;
+}
+
+.module-tab.active .module-number {
+  background: linear-gradient(180deg, #d4af37, #8b5e34);
+  color: #fff7df;
 }
 
 .module-tab strong,
@@ -678,11 +725,24 @@ button {
   display: block;
 }
 
+.module-tab strong {
+  color: #f5e9d2;
+  font-family: Lora, Merriweather, Georgia, serif;
+  font-size: 0.98rem;
+  line-height: 1.12;
+}
+
+.module-tab.active strong,
+.module-tab:hover strong {
+  color: #fff7df;
+}
+
 .done-dot {
   width: 9px;
   height: 9px;
   border-radius: 999px;
-  background: var(--green);
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
 }
 
 .workspace {
@@ -691,13 +751,43 @@ button {
   flex-direction: column;
   gap: 18px;
   padding: 28px;
+  background:
+    radial-gradient(circle at 86% 10%, rgba(212, 175, 55, 0.14), transparent 22%),
+    linear-gradient(180deg, rgba(245, 233, 210, 0.3), rgba(234, 214, 176, 0.2));
 }
 
 .story-header {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  min-height: clamp(260px, 31vw, 380px);
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 46px);
+  border: 1px solid rgba(212, 175, 55, 0.26);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(16, 25, 39, 0.78), rgba(16, 25, 39, 0.26) 54%, rgba(16, 25, 39, 0.58)),
+    linear-gradient(180deg, rgba(30, 42, 58, 0.04), rgba(30, 42, 58, 0.56)),
+    var(--header-art) center 38% / cover no-repeat,
+    var(--navy);
+  box-shadow: 0 22px 58px rgba(30, 42, 58, 0.2);
+  isolation: isolate;
+}
+
+.story-header::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 44%;
+  z-index: 0;
+  background: linear-gradient(180deg, transparent, rgba(16, 25, 39, 0.72));
+  content: "";
+}
+
+.story-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .header-tools {
@@ -708,42 +798,46 @@ button {
 
 .story-header h1 {
   margin: 6px 0 8px;
+  max-width: 880px;
+  color: #f5e9d2;
   font-size: clamp(2.2rem, 5vw, 5rem);
+  font-weight: 800;
   line-height: 0.95;
+  text-shadow:
+    0 2px 0 rgba(139, 94, 52, 0.38),
+    0 18px 44px rgba(0, 0, 0, 0.5);
 }
 
 .story-header p {
   max-width: 720px;
   margin: 0;
+  color: rgba(245, 233, 210, 0.8);
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: 1.06rem;
+}
+
+.story-header .eyebrow {
+  color: rgba(212, 175, 55, 0.86);
+}
+
+.story-header .ghost-action {
+  border-color: rgba(245, 233, 210, 0.24);
+  background: rgba(245, 233, 210, 0.14);
+  color: #f5e9d2;
+  backdrop-filter: blur(8px);
+}
+
+.story-header .ghost-action:hover {
+  background: rgba(245, 233, 210, 0.22);
 }
 
 .eyebrow {
   margin: 0;
+  color: var(--clay);
   font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.progress-card {
-  display: grid;
-  min-width: 138px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-  text-align: right;
-}
-
-.progress-card span {
-  font-size: 2rem;
-  font-weight: 900;
-}
-
-.xp-card {
-  border-color: rgba(217, 155, 37, 0.38);
-  background: #fff7e4;
 }
 
 .mode-tabs {
@@ -752,9 +846,10 @@ button {
   max-width: 100%;
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(139, 94, 52, 0.26);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(234, 214, 176, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
 }
 
 .mode-tabs button {
@@ -763,13 +858,15 @@ button {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--muted);
+  color: var(--bronze);
   cursor: pointer;
+  font-weight: 800;
 }
 
 .mode-tabs button.selected {
-  background: var(--ink);
-  color: #fff;
+  background: var(--navy);
+  color: #f5e9d2;
+  box-shadow: 0 8px 18px rgba(30, 42, 58, 0.16);
 }
 
 .mode-tabs button:disabled {
@@ -784,12 +881,14 @@ button {
 
 .story-panel,
 .quiz-panel,
-.locked-game,
-.game-layout {
+.locked-game {
   min-height: 520px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(139, 94, 52, 0.36);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 239, 0.58), rgba(234, 214, 176, 0.22)),
+    radial-gradient(circle at 100% 0, rgba(203, 160, 106, 0.18), transparent 24%),
+    var(--paper);
   box-shadow: var(--shadow);
 }
 
@@ -806,8 +905,9 @@ button {
   width: fit-content;
   padding: 8px 11px;
   border-radius: 8px;
-  background: #f2e4c2;
-  color: #755516;
+  border: 1px solid rgba(139, 94, 52, 0.22);
+  background: rgba(234, 214, 176, 0.7);
+  color: var(--bronze);
   font-weight: 800;
 }
 
@@ -817,6 +917,8 @@ button {
   gap: 18px;
   margin: 0;
   padding-left: 24px;
+  color: #2b2117;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.1rem, 2.2vw, 1.55rem);
   line-height: 1.38;
 }
@@ -833,14 +935,17 @@ button {
   width: fit-content;
   min-width: 160px;
   padding: 0 18px;
-  border: 0;
-  background: var(--teal);
-  color: #fff;
+  border: 1px solid rgba(212, 175, 55, 0.48);
+  background: linear-gradient(180deg, #d4af37, #8b5e34);
+  color: #fff7df;
   font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 22px rgba(139, 94, 52, 0.22);
 }
 
 .primary-action:hover {
-  background: var(--teal-dark);
+  background: linear-gradient(180deg, #dfbc44, #966638);
 }
 
 .primary-action:disabled {
@@ -850,10 +955,14 @@ button {
 
 .ghost-action {
   padding: 0 16px;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
+  border: 1px solid rgba(139, 94, 52, 0.34);
+  background: rgba(245, 233, 210, 0.72);
+  color: var(--navy);
   font-weight: 800;
+}
+
+.ghost-action:hover {
+  background: rgba(234, 214, 176, 0.88);
 }
 
 .ghost-action:disabled {
@@ -862,56 +971,98 @@ button {
 }
 
 .quiz-panel h2,
-.locked-game h2,
-.game-copy h2 {
+.locked-game h2 {
   max-width: 840px;
   margin: 8px 0 0;
+  color: var(--navy);
   font-size: clamp(1.6rem, 3vw, 2.7rem);
+  font-weight: 800;
   line-height: 1.08;
 }
 
 .quiz-heading {
   display: grid;
-  gap: 6px;
+  max-width: 820px;
+  gap: 10px;
 }
 
-.quiz-heading p:last-child {
+.quiz-title-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.quiz-title-row h2 {
   margin: 0;
-  color: var(--muted);
+}
+
+.quiz-title-row p {
+  margin: 0 0 0.42rem;
+  color: var(--bronze);
+  font-size: 0.92rem;
   font-weight: 800;
 }
 
+.quiz-progress-track {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 94, 52, 0.2);
+  border-radius: 999px;
+  background: rgba(234, 214, 176, 0.46);
+}
+
+.quiz-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+}
+
 .question-strip {
-  display: grid;
-  grid-template-columns: repeat(10, minmax(34px, 1fr));
+  display: flex;
+  align-items: center;
   max-width: 820px;
-  gap: 8px;
+  gap: 7px;
 }
 
 .question-chip {
-  min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--muted);
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(139, 94, 52, 0.3);
+  border-radius: 999px;
+  background: rgba(245, 233, 210, 0.58);
+  color: var(--bronze);
   cursor: pointer;
+  font-size: 0.82rem;
   font-weight: 900;
 }
 
+.question-chip span {
+  line-height: 1;
+}
+
 .question-chip.active {
-  border-color: var(--ink);
-  color: var(--ink);
+  border-color: rgba(212, 175, 55, 0.72);
+  background: linear-gradient(180deg, #d4af37, #8b5e34);
+  color: #fff7df;
 }
 
 .question-chip.complete {
-  border-color: var(--green);
-  background: #e8f2e6;
-  color: #2f5d2d;
+  border-color: rgba(122, 138, 107, 0.58);
+  background: rgba(122, 138, 107, 0.18);
+  color: #42513d;
 }
 
 .question-prompt {
   max-width: 840px;
   margin: 0;
+  color: #2b2117;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.2rem, 2.2vw, 1.75rem);
   line-height: 1.22;
 }
@@ -924,24 +1075,25 @@ button {
 
 .answer {
   padding: 12px 14px;
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 1px solid rgba(139, 94, 52, 0.3);
+  background: rgba(245, 233, 210, 0.58);
   color: var(--ink);
   text-align: left;
 }
 
 .answer:hover {
-  border-color: var(--teal);
+  border-color: var(--gold);
+  background: rgba(234, 214, 176, 0.72);
 }
 
 .answer.correct {
-  border-color: var(--green);
-  background: #e8f2e6;
+  border-color: rgba(122, 138, 107, 0.72);
+  background: rgba(122, 138, 107, 0.18);
 }
 
 .answer.wrong {
-  border-color: var(--rose);
-  background: #f7e7eb;
+  border-color: rgba(178, 58, 46, 0.62);
+  background: rgba(178, 58, 46, 0.1);
 }
 
 .feedback {
@@ -953,13 +1105,13 @@ button {
 }
 
 .feedback.good {
-  background: #e8f2e6;
-  color: #2f5d2d;
+  background: rgba(122, 138, 107, 0.18);
+  color: #3d4a38;
 }
 
 .feedback.try {
-  background: #f7e7eb;
-  color: #8f2e41;
+  background: rgba(178, 58, 46, 0.1);
+  color: var(--clay);
 }
 
 .quiz-actions {
@@ -972,22 +1124,8 @@ button {
 .xp-note {
   max-width: 820px;
   margin: 0;
-  color: #73520f;
+  color: var(--bronze);
   font-weight: 800;
-}
-
-.game-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 390px) minmax(320px, 1fr);
-  overflow: hidden;
-}
-
-.game-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: clamp(22px, 3vw, 34px);
-  border-right: 1px solid var(--line);
 }
 
 .hud {
@@ -1000,10 +1138,10 @@ button {
   display: grid;
   gap: 2px;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(139, 94, 52, 0.28);
   border-radius: 8px;
-  background: #fff;
-  color: var(--muted);
+  background: rgba(245, 233, 210, 0.58);
+  color: var(--bronze);
 }
 
 .hud strong {
@@ -1046,7 +1184,7 @@ button {
   inset: 0;
   z-index: 20;
   overflow: hidden;
-  background: #101820;
+  background: var(--deep);
   color: #fff;
 }
 
@@ -1059,26 +1197,45 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 86px 18px 20px;
-  background: linear-gradient(180deg, rgba(3, 6, 10, 0.78), rgba(3, 6, 10, 0));
+  gap: 10px;
+  padding: 10px 78px 10px 14px;
+  background: linear-gradient(180deg, rgba(3, 6, 10, 0.54), rgba(3, 6, 10, 0));
   pointer-events: none;
 }
 
 .game-topbar h2 {
   max-width: min(620px, 60vw);
-  margin: 4px 0 0;
-  font-size: clamp(1rem, 2.2vw, 1.85rem);
+  margin: 2px 0 0;
+  font-size: clamp(0.86rem, 1.55vw, 1.28rem);
   line-height: 1.1;
 }
 
 .game-fullscreen .eyebrow {
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(234, 214, 176, 0.72);
 }
 
 .game-fullscreen .hud {
-  min-width: 220px;
+  display: flex;
+  width: auto;
+  min-width: 0;
+  gap: 8px;
   pointer-events: auto;
+}
+
+.game-fullscreen .hud span {
+  min-width: 76px;
+  gap: 0;
+  padding: 7px 10px;
+  border-color: rgba(212, 175, 55, 0.28);
+  background: rgba(245, 233, 210, 0.92);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
+  color: var(--bronze);
+  font-size: 0.78rem;
+}
+
+.game-fullscreen .hud strong {
+  color: var(--navy);
+  font-size: 1.12rem;
 }
 
 .game-close {
@@ -1090,10 +1247,10 @@ button {
   width: 48px;
   height: 48px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(245, 233, 210, 0.22);
   border-radius: 999px;
-  background: rgba(4, 8, 12, 0.52);
-  color: #fff;
+  background: rgba(16, 25, 39, 0.62);
+  color: #f5e9d2;
   cursor: pointer;
   font-size: 2rem;
   line-height: 1;
@@ -1113,10 +1270,10 @@ button {
   width: 44px;
   height: 44px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(245, 233, 210, 0.22);
   border-radius: 999px;
-  background: rgba(4, 8, 12, 0.56);
-  color: #fff;
+  background: rgba(16, 25, 39, 0.58);
+  color: #f5e9d2;
   cursor: pointer;
   font-size: 1.45rem;
   font-weight: 900;
@@ -1124,7 +1281,7 @@ button {
 }
 
 .zoom-controls button:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(212, 175, 55, 0.24);
 }
 
 .sound-toggle {
@@ -1132,20 +1289,43 @@ button {
   top: 184px;
   right: 18px;
   z-index: 3;
-  min-width: 116px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(245, 233, 210, 0.22);
   border-radius: 999px;
-  background: rgba(4, 8, 12, 0.58);
-  color: #fff;
+  background: rgba(16, 25, 39, 0.62);
+  color: #f5e9d2;
   cursor: pointer;
-  font-weight: 900;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
 }
 
 .sound-toggle[aria-pressed="true"] {
-  border-color: rgba(244, 208, 111, 0.5);
-  background: rgba(56, 39, 15, 0.7);
-  color: #ffe8a3;
+  border-color: rgba(212, 175, 55, 0.56);
+  background: rgba(139, 94, 52, 0.7);
+  color: #fff0b8;
+}
+
+.sound-toggle svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.sound-icon {
+  display: grid;
+  place-items: center;
+}
+
+.sound-toggle[aria-pressed="false"] .sound-icon-off,
+.sound-toggle[aria-pressed="true"] .sound-icon-on {
+  display: none;
 }
 
 .fullscreen-stage {
@@ -1163,15 +1343,15 @@ button {
   width: min(390px, calc(100vw - 36px));
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(212, 175, 55, 0.28);
   border-radius: 8px;
-  background: rgba(7, 11, 16, 0.68);
+  background: rgba(16, 25, 39, 0.72);
   backdrop-filter: blur(10px);
 }
 
 .game-overlay-panel[data-status="won"] {
-  border-color: rgba(244, 208, 111, 0.5);
-  background: rgba(8, 15, 20, 0.84);
+  border-color: rgba(212, 175, 55, 0.56);
+  background: rgba(16, 25, 39, 0.88);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
 }
 
@@ -1181,7 +1361,7 @@ button {
 }
 
 .game-panel-kicker {
-  color: #f4d06f;
+  color: var(--gold);
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -1207,9 +1387,9 @@ button {
   gap: 12px;
   padding: 24px;
   background:
-    radial-gradient(circle at 50% 42%, rgba(244, 208, 111, 0.14), transparent 26%),
-    rgba(4, 8, 12, 0.92);
-  color: #fff8e7;
+    radial-gradient(circle at 50% 42%, rgba(212, 175, 55, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(30, 42, 58, 0.94), rgba(16, 25, 39, 0.96));
+  color: #fff8df;
   text-align: center;
   transition:
     opacity 180ms ease,
@@ -1217,27 +1397,70 @@ button {
 }
 
 .game-loading strong {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
   font-size: clamp(1.45rem, 3vw, 2.25rem);
   font-weight: 700;
 }
 
-.game-loading span:last-child {
+.game-loading [data-loading-copy] {
   max-width: 360px;
   color: rgba(255, 255, 255, 0.72);
   font-weight: 700;
+}
+
+.loading-instructions {
+  display: grid;
+  max-width: min(520px, calc(100vw - 48px));
+  gap: 8px;
+  margin: 6px 0 4px;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 750;
+  line-height: 1.35;
+  list-style: none;
+  text-align: left;
+}
+
+.loading-instructions li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.loading-instructions li::before {
+  position: absolute;
+  top: 0.58em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gold);
+  content: "";
+}
+
+.loading-play {
+  min-width: 180px;
+  margin-top: 6px;
+}
+
+.loading-play:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .loading-mark {
   width: 48px;
   height: 48px;
   border: 3px solid rgba(255, 255, 255, 0.18);
-  border-top-color: #f4d06f;
+  border-top-color: var(--gold);
   border-radius: 999px;
   animation: scene-spin 900ms linear infinite;
 }
 
-.game-fullscreen:not(.is-loading) .game-loading {
+.game-fullscreen.is-ready .loading-mark {
+  display: none;
+}
+
+.game-fullscreen.has-started .game-loading {
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -1255,27 +1478,6 @@ button {
   color: rgba(255, 255, 255, 0.76);
 }
 
-.control-guide {
-  position: absolute;
-  top: 236px;
-  right: 18px;
-  z-index: 2;
-  display: grid;
-  width: 220px;
-  gap: 8px;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(7, 11, 16, 0.62);
-  color: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(10px);
-  pointer-events: none;
-}
-
-.control-guide strong {
-  color: #fff;
-}
-
 .jacob-response {
   position: absolute;
   right: 280px;
@@ -1283,11 +1485,11 @@ button {
   z-index: 3;
   max-width: min(340px, 42vw);
   padding: 14px 18px;
-  border: 1px solid rgba(244, 208, 111, 0.42);
+  border: 1px solid rgba(212, 175, 55, 0.46);
   border-radius: 8px;
-  background: rgba(18, 14, 9, 0.78);
-  color: #fff8e7;
-  font-family: Georgia, "Times New Roman", serif;
+  background: rgba(16, 25, 39, 0.78);
+  color: #fff8df;
+  font-family: Lora, Merriweather, Georgia, serif;
   font-size: clamp(1.05rem, 1.6vw, 1.32rem);
   line-height: 1.25;
   opacity: 0;
@@ -1304,9 +1506,9 @@ button {
 }
 
 .ghost-action.dark {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-color: rgba(245, 233, 210, 0.2);
+  background: rgba(245, 233, 210, 0.1);
+  color: #f5e9d2;
 }
 
 .touch-controls {
@@ -1329,10 +1531,10 @@ button {
 }
 
 .touch-controls button {
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(212, 175, 55, 0.42);
   border-radius: 999px;
-  background: rgba(246, 246, 246, 0.86);
-  color: #101820;
+  background: rgba(245, 233, 210, 0.88);
+  color: var(--navy);
   cursor: pointer;
   font-size: 1.45rem;
   font-weight: 900;
@@ -1461,21 +1663,6 @@ button {
     flex-wrap: wrap;
   }
 
-  .progress-card {
-    flex: 1 1 150px;
-    min-width: 0;
-    text-align: left;
-  }
-
-  .game-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .game-copy {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
   .game-stage {
     min-height: 420px;
   }
@@ -1491,9 +1678,8 @@ button {
   .sound-toggle {
     top: 184px;
     right: 14px;
-    min-width: 104px;
-    padding: 9px 12px;
-    font-size: 0.84rem;
+    width: 44px;
+    height: 44px;
   }
 
   .touch-controls {
@@ -1505,12 +1691,6 @@ button {
     bottom: 14px;
     left: 14px;
     width: min(320px, calc(100vw - 310px));
-  }
-
-  .control-guide {
-    top: 154px;
-    right: 14px;
-    width: 200px;
   }
 
   .jacob-response {
@@ -1691,15 +1871,13 @@ button {
 
   .story-panel,
   .quiz-panel,
-  .locked-game,
-  .game-layout {
+  .locked-game {
     min-height: auto;
   }
 
   .game-topbar {
-    display: grid;
-    gap: 10px;
-    padding: 12px 64px 12px 12px;
+    gap: 8px;
+    padding: 8px 62px 8px 10px;
   }
 
   .game-topbar h2 {
@@ -1708,17 +1886,18 @@ button {
   }
 
   .game-fullscreen .hud {
-    grid-template-columns: repeat(3, minmax(72px, 1fr));
-    min-width: 0;
-    width: min(330px, calc(100vw - 100px));
+    width: auto;
+    gap: 6px;
   }
 
   .game-fullscreen .hud span {
-    padding: 8px;
+    min-width: 58px;
+    padding: 5px 7px;
+    font-size: 0.68rem;
   }
 
   .game-fullscreen .hud strong {
-    font-size: 1.25rem;
+    font-size: 0.95rem;
   }
 
   .game-overlay-panel {
@@ -1729,7 +1908,7 @@ button {
   }
 
   .question-strip {
-    grid-template-columns: repeat(5, minmax(38px, 1fr));
+    flex-wrap: wrap;
   }
 
   .quiz-actions {
@@ -1769,9 +1948,13 @@ button {
   .sound-toggle {
     top: 178px;
     right: 14px;
-    min-width: 94px;
-    padding: 8px 10px;
-    font-size: 0.76rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .sound-toggle svg {
+    width: 20px;
+    height: 20px;
   }
 
   .touch-controls button {
@@ -1820,18 +2003,6 @@ button {
       color: rgba(255, 255, 255, 0.78);
       font-weight: 800;
     }
-  }
-
-  .control-guide {
-    top: auto;
-    right: auto;
-    bottom: 12px;
-    left: 12px;
-    width: min(168px, calc(100vw - 238px));
-    min-width: 128px;
-    gap: 4px;
-    padding: 10px;
-    font-size: 0.72rem;
   }
 
   .jacob-response {

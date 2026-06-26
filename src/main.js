@@ -3,7 +3,6 @@ import { GLTFLoader } from '../vendor/GLTFLoader.js';
 import { modules } from './storyData.js';
 
 const app = document.querySelector('#app');
-const gameTimeLimit = 120;
 const xpRewards = {
   question: 10,
   game: 50
@@ -32,7 +31,6 @@ const state = {
   gameXpAwarded: new Set(),
   gameStatus: 'idle',
   collected: 0,
-  timeLeft: gameTimeLimit,
   audioMuted: false
 };
 
@@ -180,7 +178,7 @@ function render() {
       </aside>
 
       <section class="workspace">
-        <header class="story-header">
+        <header class="story-header" style="--header-art: url('../${module.art}')">
           <div>
             <p class="eyebrow">${module.location}</p>
             <h1>${module.title}</h1>
@@ -188,14 +186,6 @@ function render() {
           </div>
           <div class="header-tools">
             <button class="ghost-action" data-map>Journey Map</button>
-            <div class="progress-card">
-              <span>${state.completed.size}/${modules.length}</span>
-              <small>modules complete</small>
-            </div>
-            <div class="progress-card xp-card">
-              <span>${moduleXp(module)} XP</span>
-              <small>this module</small>
-            </div>
           </div>
         </header>
 
@@ -369,8 +359,13 @@ function quizView(module) {
     <article class="quiz-panel">
       <div class="quiz-heading">
         <p class="eyebrow">Story Check</p>
-        <h2>Question ${currentIndex + 1} of ${questions.length}</h2>
-        <p>${completeCount}/${questions.length} questions complete · ${earnedQuestionXp(module)}/${questions.length * xpRewards.question} question XP</p>
+        <div class="quiz-title-row">
+          <h2>Question ${currentIndex + 1}</h2>
+          <p>${completeCount}/${questions.length} complete · ${earnedQuestionXp(module)} XP</p>
+        </div>
+        <div class="quiz-progress-track" aria-hidden="true">
+          <span style="width: ${(completeCount / questions.length) * 100}%"></span>
+        </div>
       </div>
       <div class="question-strip" aria-label="Question progress">
         ${questions
@@ -382,7 +377,7 @@ function quizView(module) {
                 }"
                 data-quiz-go="${index}"
                 aria-label="Go to question ${index + 1}"
-              >${index + 1}</button>
+              ><span>${index + 1}</span></button>
             `
           )
           .join('')}
@@ -431,8 +426,8 @@ function gameView(module) {
       <article class="locked-game">
         <p class="eyebrow">${module.challengeName}</p>
         <h2>Complete all 10 questions to unlock the 3D challenge.</h2>
-        <p>${completedQuestionCount(module)}/${questions.length} questions complete. Finish the story check first, then the game will open.</p>
-        <p class="xp-note">${earnedQuestionXp(module)}/${questions.length * xpRewards.question} question XP earned · ${xpRewards.game} game XP waiting</p>
+        <p>${completedQuestionCount(module)}/${questions.length} complete. Finish the story check first, then the game will open.</p>
+        <p class="xp-note">${earnedQuestionXp(module)} XP earned · ${xpRewards.game} XP game reward</p>
         <button class="primary-action" data-step="quiz">Continue Questions</button>
       </article>
     `;
@@ -458,7 +453,6 @@ function gameView(module) {
         </div>
         <div class="hud">
           <span><strong data-stars>${state.collected}</strong>/7 stars</span>
-          <span><strong data-time>${state.timeLeft}</strong>s</span>
           <span><strong data-xp>${moduleXp(module)}</strong> XP</span>
         </div>
       </div>
@@ -466,30 +460,50 @@ function gameView(module) {
         <button data-zoom="in" aria-label="Zoom in">+</button>
         <button data-zoom="out" aria-label="Zoom out">-</button>
       </div>
-      <button class="sound-toggle" data-sound-toggle aria-pressed="${state.audioMuted ? 'true' : 'false'}">
-        ${state.audioMuted ? 'Sound Off' : 'Sound On'}
+      <button
+        class="sound-toggle"
+        data-sound-toggle
+        aria-pressed="${state.audioMuted ? 'true' : 'false'}"
+        aria-label="${state.audioMuted ? 'Unmute game sound' : 'Mute game sound'}"
+        title="${state.audioMuted ? 'Unmute game sound' : 'Mute game sound'}"
+      >
+        <span class="sound-icon sound-icon-on" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z"></path>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+            <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+          </svg>
+        </span>
+        <span class="sound-icon sound-icon-off" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z"></path>
+            <path d="m16 9 5 5"></path>
+            <path d="m21 9-5 5"></path>
+          </svg>
+        </span>
       </button>
       <button class="game-close" data-close-game aria-label="Close 3D game">&times;</button>
       <div class="game-stage fullscreen-stage" id="game-stage" aria-label="3D dream star collection game"></div>
-      <aside class="control-guide" aria-label="Available controls">
-        <strong>Controls</strong>
-        <span>Move: WASD or arrows</span>
-        <span>Run: Shift or Run button</span>
-        <span>Jump: Space or Jump</span>
-        <span>Zoom: mouse wheel or + / -</span>
-      </aside>
       <div class="jacob-response" data-jacob-response aria-live="polite"></div>
       <div class="game-loading" data-game-loading role="status" aria-live="polite">
         <span class="loading-mark"></span>
-        <strong>Preparing the scene</strong>
-        <span>Loading Joseph, Jacob, animals, and the valley...</span>
+        <p class="game-panel-kicker" data-loading-kicker>Preparing the Scene</p>
+        <strong data-loading-title>Gather the Dreams</strong>
+        <span data-loading-copy>Loading Joseph, Jacob, animals, and the valley...</span>
+        <ul class="loading-instructions">
+          <li>Collect all 7 dream stars around the field.</li>
+          <li>Bring Joseph back to Jacob after every star is gathered.</li>
+          <li>Use WASD, arrows, or the mobile D-pad. Hold Run to move faster.</li>
+          <li>Jump with Space or the Jump button.</li>
+        </ul>
+        <button class="primary-action loading-play" data-game-action="start" disabled>Loading...</button>
       </div>
-      <div class="game-overlay-panel" data-game-panel data-status="${state.gameStatus}">
+      <div class="game-overlay-panel is-hidden" data-game-panel data-status="${state.gameStatus}">
         <p class="game-panel-kicker" data-result-title>${gamePanelTitle()}</p>
         <p class="game-result" data-result>${gameResultText(module)}</p>
         <p class="game-reward" data-game-reward>${gameRewardText(module)}</p>
         <div class="game-actions">
-          <button class="primary-action" data-game-action="start">${state.gameStatus === 'running' ? 'Restart' : 'Play'}</button>
+          <button class="primary-action" data-game-action="restart">${state.gameStatus === 'won' ? 'Play Again' : 'Restart'}</button>
           <button class="ghost-action dark" data-dismiss-game-panel>${state.gameStatus === 'won' ? 'Close Game' : 'Close'}</button>
         </div>
       </div>
@@ -515,14 +529,12 @@ function gameView(module) {
 
 function gameResultText(module) {
   if (state.gameStatus === 'won') return module.game.winMessage;
-  if (state.gameStatus === 'lost') return 'Time ran out. Try again, gather the stars, and bring them to Jacob.';
   if (state.collected >= 7) return 'All stars gathered. Bring Joseph back to Jacob to finish the journey.';
   return 'Collect every dream star, then bring Joseph to Jacob to complete the challenge.';
 }
 
 function gamePanelTitle() {
   if (state.gameStatus === 'won') return 'Challenge Complete';
-  if (state.gameStatus === 'lost') return 'Try Again';
   return 'Ready';
 }
 
@@ -532,7 +544,6 @@ function gameRewardText(module) {
       ? `Reward earned: +${xpRewards.game} XP. Module total: ${moduleXp(module)}/${moduleMaxXp(module)} XP.`
       : `Reward available: +${xpRewards.game} XP.`;
   }
-  if (state.gameStatus === 'lost') return `Game reward: +${xpRewards.game} XP for a correct completion.`;
   return `Questions: ${earnedQuestionXp(module)} XP · Game completion: +${xpRewards.game} XP.`;
 }
 
@@ -570,7 +581,6 @@ function bindEvents() {
         step: 'learn',
         gameStatus: 'idle',
         collected: 0,
-        timeLeft: gameTimeLimit
       });
     });
   });
@@ -583,7 +593,6 @@ function bindEvents() {
         step: 'learn',
         gameStatus: 'idle',
         collected: 0,
-        timeLeft: gameTimeLimit
       });
     });
   });
@@ -607,14 +616,14 @@ function bindEvents() {
 
   document.querySelectorAll('[data-close-game]').forEach((button) => {
     button.addEventListener('click', () => {
-      setState({ step: 'learn', gameStatus: 'idle', collected: 0, timeLeft: gameTimeLimit });
+      setState({ step: 'learn', gameStatus: 'idle', collected: 0 });
     });
   });
 
   document.querySelectorAll('[data-dismiss-game-panel]').forEach((button) => {
     button.addEventListener('click', () => {
       if (state.gameStatus === 'won') {
-        setState({ step: 'learn', gameStatus: 'idle', collected: 0, timeLeft: gameTimeLimit });
+        setState({ step: 'learn', gameStatus: 'idle', collected: 0 });
         return;
       }
       document.querySelector('.game-overlay-panel')?.classList.add('is-hidden');
@@ -638,6 +647,7 @@ function bindEvents() {
 
   document.querySelectorAll('[data-game-action]').forEach((button) => {
     button.addEventListener('click', () => {
+      if (button.disabled) return;
       if (miniGame) miniGame.start();
     });
   });
@@ -787,7 +797,30 @@ function createCollectGame(stage, module) {
   let disposed = false;
   const gameShell = stage.closest('.game-fullscreen');
   const loadingEl = gameShell?.querySelector('[data-game-loading]');
+  const loadingTitleEl = gameShell?.querySelector('[data-loading-title]');
+  const loadingCopyEl = gameShell?.querySelector('[data-loading-copy]');
+  const loadingKickerEl = gameShell?.querySelector('[data-loading-kicker]');
+  const loadingPlayButton = gameShell?.querySelector('.loading-play');
   const readyTasks = [];
+
+  const markGameReady = (readyState) => {
+    if (disposed) return;
+    stage.dataset.ready = readyState;
+    gameShell?.classList.remove('is-loading');
+    gameShell?.classList.add('is-ready');
+    if (loadingKickerEl) loadingKickerEl.textContent = readyState === 'timeout' ? 'Ready Enough' : 'Scene Ready';
+    if (loadingTitleEl) loadingTitleEl.textContent = 'Begin the Challenge';
+    if (loadingCopyEl) {
+      loadingCopyEl.textContent =
+        readyState === 'timeout'
+          ? 'The lightweight scene is ready. A few details may keep loading in the background.'
+          : 'Everything is ready. Press Play when you are ready to begin.';
+    }
+    if (loadingPlayButton) {
+      loadingPlayButton.disabled = false;
+      loadingPlayButton.textContent = 'Play';
+    }
+  };
 
   const trackReadyTask = (task) => {
     readyTasks.push(Promise.resolve(task).catch(() => false));
@@ -795,18 +828,13 @@ function createCollectGame(stage, module) {
 
   const revealGameWhenReady = () => {
     const safetyTimer = setTimeout(() => {
-      if (disposed) return;
-      stage.dataset.ready = 'timeout';
-      gameShell?.classList.remove('is-loading');
-      loadingEl?.setAttribute('aria-hidden', 'true');
+      markGameReady('timeout');
     }, lightweightMode ? 9000 : 15000);
 
     Promise.allSettled(readyTasks).then(() => {
       if (disposed) return;
       clearTimeout(safetyTimer);
-      stage.dataset.ready = 'true';
-      gameShell?.classList.remove('is-loading');
-      loadingEl?.setAttribute('aria-hidden', 'true');
+      markGameReady('true');
     });
   };
 
@@ -996,23 +1024,22 @@ function createCollectGame(stage, module) {
   };
   let running = false;
   let collected = 0;
-  let timeLeft = gameTimeLimit;
   let verticalVelocity = 0;
   let isGrounded = true;
   let lastTick = performance.now();
   let josephNearJacob = false;
   let jacobResponseTimer = null;
   let animationFrame = null;
-  let timer = null;
   let backgroundMusic = null;
+  let pickupAudioContext = null;
   let speechVoicesReady = null;
   let jacobSpeechRequestId = 0;
 
   const updateSoundButton = () => {
     if (!soundToggle) return;
-    soundToggle.textContent = state.audioMuted ? 'Sound Off' : 'Sound On';
     soundToggle.setAttribute('aria-pressed', String(state.audioMuted));
     soundToggle.setAttribute('aria-label', state.audioMuted ? 'Unmute game sound' : 'Mute game sound');
+    soundToggle.setAttribute('title', state.audioMuted ? 'Unmute game sound' : 'Mute game sound');
   };
 
   const setGameAudioMuted = (muted) => {
@@ -1027,6 +1054,7 @@ function createCollectGame(stage, module) {
       if (muted) {
         backgroundMusic.pause();
       } else if (running) {
+        resumePickupAudio();
         backgroundMusic.play().catch(() => {});
       }
     }
@@ -1047,6 +1075,48 @@ function createCollectGame(stage, module) {
     if (!backgroundMusic) return;
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
+  };
+
+  const resumePickupAudio = () => {
+    if (state.audioMuted) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!pickupAudioContext) pickupAudioContext = new AudioContextClass();
+    if (pickupAudioContext.state === 'suspended') pickupAudioContext.resume().catch(() => {});
+  };
+
+  const playStarChime = () => {
+    if (state.audioMuted || !pickupAudioContext) return;
+    const context = pickupAudioContext;
+    const now = context.currentTime;
+    const output = context.createGain();
+    const tone = context.createOscillator();
+    const shimmer = context.createOscillator();
+
+    output.gain.setValueAtTime(0.0001, now);
+    output.gain.exponentialRampToValueAtTime(0.085, now + 0.025);
+    output.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+
+    tone.type = 'sine';
+    tone.frequency.setValueAtTime(880, now);
+    tone.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
+
+    shimmer.type = 'triangle';
+    shimmer.frequency.setValueAtTime(1760, now);
+    shimmer.frequency.exponentialRampToValueAtTime(1180, now + 0.26);
+
+    tone.connect(output);
+    shimmer.connect(output);
+    output.connect(context.destination);
+    tone.start(now);
+    shimmer.start(now + 0.018);
+    tone.stop(now + 0.6);
+    shimmer.stop(now + 0.42);
+    tone.onended = () => {
+      tone.disconnect();
+      shimmer.disconnect();
+      output.disconnect();
+    };
   };
 
   const loadSpeechVoices = () => {
@@ -1199,21 +1269,22 @@ function createCollectGame(stage, module) {
 
   const updateHud = () => {
     const starsEl = document.querySelector('[data-stars]');
-    const timeEl = document.querySelector('[data-time]');
     const xpEl = document.querySelector('[data-xp]');
     const resultEl = document.querySelector('[data-result]');
     const resultTitleEl = document.querySelector('[data-result-title]');
     const rewardEl = document.querySelector('[data-game-reward]');
-    const actionEl = document.querySelector('[data-game-action]');
+    const actionEls = document.querySelectorAll('[data-game-action]');
     const panelCloseEl = document.querySelector('[data-dismiss-game-panel]');
     const panelEl = document.querySelector('[data-game-panel]');
     if (starsEl) starsEl.textContent = String(collected);
-    if (timeEl) timeEl.textContent = String(timeLeft);
     if (xpEl) xpEl.textContent = String(moduleXp(module));
     if (resultEl) resultEl.textContent = gameResultText(module);
     if (resultTitleEl) resultTitleEl.textContent = gamePanelTitle();
     if (rewardEl) rewardEl.textContent = gameRewardText(module);
-    if (actionEl) actionEl.textContent = state.gameStatus === 'running' ? 'Restart' : state.gameStatus === 'won' ? 'Play Again' : 'Play';
+    actionEls.forEach((actionEl) => {
+      if (actionEl.disabled) return;
+      actionEl.textContent = state.gameStatus === 'won' ? 'Play Again' : state.gameStatus === 'running' ? 'Restart' : 'Play';
+    });
     if (panelCloseEl) panelCloseEl.textContent = state.gameStatus === 'won' ? 'Close Game' : 'Close';
     if (panelEl) {
       panelEl.dataset.status = state.gameStatus;
@@ -1224,25 +1295,13 @@ function createCollectGame(stage, module) {
     running = false;
     state.gameStatus = status;
     state.collected = collected;
-    state.timeLeft = timeLeft;
-    if (timer) clearInterval(timer);
     if (status === 'won') {
+      stopBackgroundMusic();
       state.completed.add(module.id);
       state.gameXpAwarded.add(module.id);
       document.querySelector('[data-game-panel]')?.classList.remove('is-hidden');
     }
-    if (status === 'lost') {
-      document.querySelector('[data-game-panel]')?.classList.remove('is-hidden');
-    }
     updateHud();
-  };
-
-  const tickTimer = () => {
-    if (!running) return;
-    timeLeft -= 1;
-    state.timeLeft = timeLeft;
-    updateHud();
-    if (timeLeft <= 0) finish('lost');
   };
 
   const jacobResponseForProgress = () => {
@@ -1359,6 +1418,7 @@ function createCollectGame(stage, module) {
           star.visible = false;
           collected += 1;
           state.collected = collected;
+          playStarChime();
           updateHud();
           if (collected === stars.length) {
             deliveryRing.visible = true;
@@ -1423,11 +1483,11 @@ function createCollectGame(stage, module) {
     start() {
       requestLandscapeMode();
       collected = 0;
-      timeLeft = gameTimeLimit;
       running = true;
       state.gameStatus = 'running';
       state.collected = 0;
-      state.timeLeft = gameTimeLimit;
+      gameShell?.classList.add('has-started');
+      loadingEl?.setAttribute('aria-hidden', 'true');
       document.querySelector('[data-game-panel]')?.classList.add('is-hidden');
       document.querySelector('[data-jacob-response]')?.classList.remove('is-visible');
       josephNearJacob = false;
@@ -1441,9 +1501,8 @@ function createCollectGame(stage, module) {
       stars.forEach((star) => {
         star.visible = true;
       });
-      if (timer) clearInterval(timer);
-      timer = setInterval(tickTimer, 1000);
       if (!state.audioMuted) {
+        resumePickupAudio();
         loadSpeechVoices();
         startBackgroundMusic();
       }
@@ -1452,7 +1511,6 @@ function createCollectGame(stage, module) {
     dispose() {
       running = false;
       disposed = true;
-      if (timer) clearInterval(timer);
       if (jacobResponseTimer) clearTimeout(jacobResponseTimer);
       jacobSpeechRequestId += 1;
       window.speechSynthesis?.cancel();
@@ -2323,7 +2381,20 @@ function createTexturedEnvironment(assets) {
     { x: 15, z: 24, height: 8, rotation: -1 },
     { x: 27, z: 10, height: 7.6, rotation: 0.3 },
     { x: 29, z: -12, height: 8.4, rotation: 1.1 },
-    { x: 9, z: -29, height: 7.2, rotation: -0.2 }
+    { x: 9, z: -29, height: 7.2, rotation: -0.2 },
+    { x: -31, z: -27, height: 9.1, rotation: -1.2 },
+    { x: -18, z: -30, height: 6.9, rotation: 0.55 },
+    { x: -33, z: 12, height: 8.8, rotation: 2.1 },
+    { x: -18, z: 29, height: 6.6, rotation: -2.4 },
+    { x: 2, z: 31, height: 7.1, rotation: 1.9 },
+    { x: 27, z: 24, height: 8.7, rotation: -0.55 },
+    { x: 34, z: 2, height: 7.3, rotation: 2.7 },
+    { x: 30, z: -25, height: 9.3, rotation: 0.45 },
+    { x: 18, z: -31, height: 6.8, rotation: -1.65 },
+    { x: -7, z: -33, height: 7.7, rotation: 2.45 },
+    { x: -31, z: -10, height: 6.7, rotation: -0.1 },
+    { x: 33, z: 16, height: 7.9, rotation: 1.25 },
+    { x: 21, z: -18, height: 6.4, rotation: -2.05 }
   ]);
 
   addEnvironmentInstances(group, assets.rock, [
