@@ -660,9 +660,18 @@ function loadGltf(loader, path) {
   });
 }
 
+function prefersLightweightGameMode() {
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+  const narrowViewport = window.matchMedia?.('(max-width: 820px)').matches;
+  const lowMemory = navigator.deviceMemory ? navigator.deviceMemory <= 4 : false;
+  return Boolean(coarsePointer || narrowViewport || lowMemory);
+}
+
 function createCollectGame(stage, module) {
   stage.dataset.character = 'fallback';
   stage.dataset.jacob = 'fallback';
+  const lightweightMode = prefersLightweightGameMode();
+  stage.dataset.performanceMode = lightweightMode ? 'lightweight' : 'full';
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a2238);
   scene.fog = new THREE.Fog(0x1a2238, 28, 78);
@@ -671,9 +680,9 @@ function createCollectGame(stage, module) {
   camera.position.set(0, 2.4, 8.5);
   camera.lookAt(0, 1.2, 0);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
+  const renderer = new THREE.WebGLRenderer({ antialias: !lightweightMode, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(lightweightMode ? 1 : Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = !lightweightMode;
   stage.appendChild(renderer.domElement);
 
   const sky = createTwilightSky();
@@ -684,7 +693,7 @@ function createCollectGame(stage, module) {
 
   const sun = new THREE.DirectionalLight(0xffc27d, 1.6);
   sun.position.set(-12, 9, 10);
-  sun.castShadow = true;
+  sun.castShadow = !lightweightMode;
   sun.shadow.camera.left = -24;
   sun.shadow.camera.right = 24;
   sun.shadow.camera.top = 24;
@@ -777,16 +786,29 @@ function createCollectGame(stage, module) {
   };
 
   const revealGameWhenReady = () => {
+    const safetyTimer = setTimeout(() => {
+      if (disposed) return;
+      stage.dataset.ready = 'timeout';
+      gameShell?.classList.remove('is-loading');
+      loadingEl?.setAttribute('aria-hidden', 'true');
+    }, lightweightMode ? 9000 : 15000);
+
     Promise.allSettled(readyTasks).then(() => {
       if (disposed) return;
+      clearTimeout(safetyTimer);
       stage.dataset.ready = 'true';
       gameShell?.classList.remove('is-loading');
       loadingEl?.setAttribute('aria-hidden', 'true');
     });
   };
 
-  trackReadyTask(loadEnvironmentAssets(loader, scene, fallbackEnvironment, () => disposed, stage));
-  trackReadyTask(loadAnimalAssets(loader, animalScene, () => disposed, stage));
+  if (lightweightMode) {
+    stage.dataset.environment = 'fallback';
+    stage.dataset.animals = 'fallback';
+  } else {
+    trackReadyTask(loadEnvironmentAssets(loader, scene, fallbackEnvironment, () => disposed, stage));
+    trackReadyTask(loadAnimalAssets(loader, animalScene, () => disposed, stage));
+  }
 
   trackReadyTask(
     loadGltf(loader, josephModelPath)
@@ -804,7 +826,7 @@ function createCollectGame(stage, module) {
       model.position.y -= 0.5;
       model.traverse((object) => {
         if (object.isMesh) {
-          object.castShadow = true;
+          object.castShadow = !lightweightMode;
           object.receiveShadow = true;
         }
       });
@@ -825,77 +847,82 @@ function createCollectGame(stage, module) {
       })
   );
 
-  trackReadyTask(
-    loadGltf(loader, josephRunModelPath)
-      .then((gltf) => {
-      if (disposed) {
-        disposeObject(gltf.scene);
-        return false;
-      }
-
-      const model = gltf.scene;
-      josephRunModel = model;
-      normalizeModelToHeight(model, 2);
-      model.position.y -= 0.5;
-      model.visible = false;
-      model.traverse((object) => {
-        if (object.isMesh) {
-          object.castShadow = true;
-          object.receiveShadow = true;
+  if (!lightweightMode) {
+    trackReadyTask(
+      loadGltf(loader, josephRunModelPath)
+        .then((gltf) => {
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return false;
         }
-      });
-      robe.add(model);
 
-      if (gltf.animations.length) {
-        runMixer = new THREE.AnimationMixer(model);
-        runAction = runMixer.clipAction(gltf.animations[0]);
-        runAction.play();
-        runAction.paused = true;
-      }
-      stage.dataset.runCharacter = 'glb';
-      return true;
-    })
-      .catch((error) => {
-        console.warn('Joseph running GLB failed to load, using walking animation for run.', error);
-        return false;
-      })
-  );
+        const model = gltf.scene;
+        josephRunModel = model;
+        normalizeModelToHeight(model, 2);
+        model.position.y -= 0.5;
+        model.visible = false;
+        model.traverse((object) => {
+          if (object.isMesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+          }
+        });
+        robe.add(model);
 
-  trackReadyTask(
-    loadGltf(loader, josephJumpModelPath)
-      .then((gltf) => {
-      if (disposed) {
-        disposeObject(gltf.scene);
-        return false;
-      }
-
-      const model = gltf.scene;
-      josephJumpModel = model;
-      normalizeModelToHeight(model, 2);
-      model.position.y -= 0.5;
-      model.visible = false;
-      model.traverse((object) => {
-        if (object.isMesh) {
-          object.castShadow = true;
-          object.receiveShadow = true;
+        if (gltf.animations.length) {
+          runMixer = new THREE.AnimationMixer(model);
+          runAction = runMixer.clipAction(gltf.animations[0]);
+          runAction.play();
+          runAction.paused = true;
         }
-      });
-      robe.add(model);
-
-      if (gltf.animations.length) {
-        jumpMixer = new THREE.AnimationMixer(model);
-        jumpAction = jumpMixer.clipAction(gltf.animations[0]);
-        jumpAction.play();
-        jumpAction.paused = true;
-      }
-      stage.dataset.jumpCharacter = 'glb';
-      return true;
-    })
-      .catch((error) => {
-        console.warn('Joseph jumping GLB failed to load, using movement animation during jump.', error);
-        return false;
+        stage.dataset.runCharacter = 'glb';
+        return true;
       })
-  );
+        .catch((error) => {
+          console.warn('Joseph running GLB failed to load, using walking animation for run.', error);
+          return false;
+        })
+    );
+
+    trackReadyTask(
+      loadGltf(loader, josephJumpModelPath)
+        .then((gltf) => {
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return false;
+        }
+
+        const model = gltf.scene;
+        josephJumpModel = model;
+        normalizeModelToHeight(model, 2);
+        model.position.y -= 0.5;
+        model.visible = false;
+        model.traverse((object) => {
+          if (object.isMesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+          }
+        });
+        robe.add(model);
+
+        if (gltf.animations.length) {
+          jumpMixer = new THREE.AnimationMixer(model);
+          jumpAction = jumpMixer.clipAction(gltf.animations[0]);
+          jumpAction.play();
+          jumpAction.paused = true;
+        }
+        stage.dataset.jumpCharacter = 'glb';
+        return true;
+      })
+        .catch((error) => {
+          console.warn('Joseph jumping GLB failed to load, using movement animation during jump.', error);
+          return false;
+        })
+    );
+  } else {
+    stage.dataset.runCharacter = 'skipped';
+    stage.dataset.jumpCharacter = 'skipped';
+  }
 
   trackReadyTask(
     loadGltf(loader, jacobModelPath)
@@ -913,7 +940,7 @@ function createCollectGame(stage, module) {
       applyRelaxedArmPose(model);
       model.traverse((object) => {
         if (object.isMesh) {
-          object.castShadow = true;
+          object.castShadow = !lightweightMode;
           object.receiveShadow = true;
         }
       });
