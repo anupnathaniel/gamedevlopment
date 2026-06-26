@@ -1311,14 +1311,21 @@ button {
 
 .touch-controls {
   position: absolute;
-  right: 22px;
+  right: 0;
   bottom: 22px;
+  left: 0;
   z-index: 3;
   display: none;
-  grid-template-columns: repeat(4, 62px);
-  grid-template-rows: repeat(3, 62px);
-  gap: 8px;
+  justify-content: space-between;
+  align-items: end;
+  padding: 0 24px;
   touch-action: none;
+  pointer-events: none;
+}
+
+.dpad,
+.action-pad {
+  pointer-events: auto;
 }
 
 .touch-controls button {
@@ -1333,36 +1340,48 @@ button {
   user-select: none;
 }
 
-.touch-controls [data-control="up"] {
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(3, 58px);
+  gap: 8px;
+}
+
+.dpad [data-control="up"] {
   grid-column: 2;
   grid-row: 1;
 }
 
-.touch-controls [data-control="left"] {
+.dpad [data-control="left"] {
   grid-column: 1;
   grid-row: 2;
 }
 
-.touch-controls [data-control="jump"] {
-  grid-column: 2;
-  grid-row: 2;
-  font-size: 0.8rem;
-}
-
-.touch-controls [data-control="run"] {
-  grid-column: 3;
-  grid-row: 2;
-  font-size: 0.8rem;
-}
-
-.touch-controls [data-control="down"] {
+.dpad [data-control="down"] {
   grid-column: 2;
   grid-row: 3;
 }
 
-.touch-controls [data-control="right"] {
-  grid-column: 4;
+.dpad [data-control="right"] {
+  grid-column: 3;
   grid-row: 2;
+}
+
+.action-pad {
+  display: grid;
+  grid-template-columns: repeat(2, 76px);
+  gap: 12px;
+}
+
+.action-pad button {
+  width: 76px;
+  height: 76px;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+}
+
+.orientation-hint {
+  display: none;
 }
 
 @media (max-width: 900px) {
@@ -1478,7 +1497,7 @@ button {
   }
 
   .touch-controls {
-    display: grid;
+    display: flex;
   }
 
   .game-overlay-panel {
@@ -1729,11 +1748,11 @@ button {
   }
 
   .touch-controls {
-    right: 14px;
+    right: 0;
     bottom: 12px;
-    grid-template-columns: repeat(4, 46px);
-    grid-template-rows: repeat(3, 46px);
-    gap: 6px;
+    left: 0;
+    display: flex;
+    padding: 0 14px;
   }
 
   .zoom-controls {
@@ -1757,6 +1776,50 @@ button {
 
   .touch-controls button {
     font-size: 1.08rem;
+  }
+
+  .dpad {
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(3, 48px);
+    gap: 6px;
+  }
+
+  .action-pad {
+    grid-template-columns: repeat(2, 62px);
+    gap: 8px;
+  }
+
+  .action-pad button {
+    width: 62px;
+    height: 62px;
+    font-size: 0.74rem;
+  }
+
+  @media (orientation: portrait) and (pointer: coarse) {
+    .orientation-hint {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 8px;
+      padding: 28px;
+      background: rgba(4, 8, 12, 0.78);
+      color: #fff8e7;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .orientation-hint strong {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.6rem, 8vw, 2.4rem);
+    }
+
+    .orientation-hint span {
+      color: rgba(255, 255, 255, 0.78);
+      font-weight: 800;
+    }
   }
 
   .control-guide {

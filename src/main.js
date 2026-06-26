@@ -493,13 +493,21 @@ function gameView(module) {
           <button class="ghost-action dark" data-dismiss-game-panel>${state.gameStatus === 'won' ? 'Close Game' : 'Close'}</button>
         </div>
       </div>
+      <div class="orientation-hint" aria-hidden="true">
+        <strong>Rotate for best play</strong>
+        <span>Use landscape mode for the 3D challenge.</span>
+      </div>
       <div class="touch-controls" aria-label="Movement controls">
-        <button data-control="up" aria-label="Move up">&uarr;</button>
-        <button data-control="left" aria-label="Move left">&larr;</button>
-        <button data-control="jump" aria-label="Jump">Jump</button>
-        <button data-control="run" aria-label="Run">Run</button>
-        <button data-control="down" aria-label="Move down">&darr;</button>
-        <button data-control="right" aria-label="Move right">&rarr;</button>
+        <div class="dpad" aria-label="Movement D-pad">
+          <button data-control="up" aria-label="Move up">&uarr;</button>
+          <button data-control="left" aria-label="Move left">&larr;</button>
+          <button data-control="down" aria-label="Move down">&darr;</button>
+          <button data-control="right" aria-label="Move right">&rarr;</button>
+        </div>
+        <div class="action-pad" aria-label="Action controls">
+          <button data-control="jump" aria-label="Jump">Jump</button>
+          <button data-control="run" aria-label="Run">Run</button>
+        </div>
       </div>
     </section>
   `;
@@ -924,35 +932,39 @@ function createCollectGame(stage, module) {
     stage.dataset.jumpCharacter = 'skipped';
   }
 
-  trackReadyTask(
-    loadGltf(loader, jacobModelPath)
-      .then((gltf) => {
-      if (disposed) {
-        disposeObject(gltf.scene);
-        return false;
-      }
-      jacob.remove(jacobPlaceholder);
-      disposeObject(jacobPlaceholder);
-
-      const model = gltf.scene;
-      normalizeModelToHeight(model, 2.25);
-      model.position.y -= 0.5;
-      applyRelaxedArmPose(model);
-      model.traverse((object) => {
-        if (object.isMesh) {
-          object.castShadow = !lightweightMode;
-          object.receiveShadow = true;
+  if (!lightweightMode) {
+    trackReadyTask(
+      loadGltf(loader, jacobModelPath)
+        .then((gltf) => {
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return false;
         }
-      });
-      jacob.add(model);
-      stage.dataset.jacob = 'glb';
-      return true;
-    })
-      .catch((error) => {
-        console.warn('Jacob GLB failed to load, using fallback character.', error);
-        return false;
+        jacob.remove(jacobPlaceholder);
+        disposeObject(jacobPlaceholder);
+
+        const model = gltf.scene;
+        normalizeModelToHeight(model, 2.25);
+        model.position.y -= 0.5;
+        applyRelaxedArmPose(model);
+        model.traverse((object) => {
+          if (object.isMesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+          }
+        });
+        jacob.add(model);
+        stage.dataset.jacob = 'glb';
+        return true;
       })
-  );
+        .catch((error) => {
+          console.warn('Jacob GLB failed to load, using fallback character.', error);
+          return false;
+        })
+    );
+  } else {
+    stage.dataset.jacob = 'fallback';
+  }
   revealGameWhenReady();
 
   const starGeometry = createStarGeometry();
@@ -1169,6 +1181,20 @@ function createCollectGame(stage, module) {
     const nextMuted = !state.audioMuted;
     setGameAudioMuted(nextMuted);
     if (!nextMuted && running) startBackgroundMusic();
+  };
+  const requestLandscapeMode = () => {
+    if (!lightweightMode) return;
+    const orientation = window.screen?.orientation;
+    const fullscreenRequest = gameShell?.requestFullscreen?.();
+    if (fullscreenRequest?.then) {
+      fullscreenRequest.then(() => {
+        orientation?.lock?.('landscape').catch(() => {});
+      }).catch(() => {
+        orientation?.lock?.('landscape').catch(() => {});
+      });
+      return;
+    }
+    orientation?.lock?.('landscape').catch(() => {});
   };
 
   const updateHud = () => {
@@ -1395,6 +1421,7 @@ function createCollectGame(stage, module) {
 
   return {
     start() {
+      requestLandscapeMode();
       collected = 0;
       timeLeft = gameTimeLimit;
       running = true;
@@ -1481,35 +1508,56 @@ function createFallbackJoseph() {
 
 function createFallbackJacob() {
   const group = new THREE.Group();
+  const robeMaterial = new THREE.MeshStandardMaterial({ color: 0xb08355, roughness: 0.78 });
+  const mantleMaterial = new THREE.MeshStandardMaterial({ color: 0xf0dfbf, roughness: 0.82 });
+  const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xd0a06d, roughness: 0.65 });
+  const beardMaterial = new THREE.MeshStandardMaterial({ color: 0xe7dfcf, roughness: 0.9 });
+  const leatherMaterial = new THREE.MeshStandardMaterial({ color: 0x5a3b25, roughness: 0.86 });
+
   const robe = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.44, 1.12, 8, 16),
-    new THREE.MeshStandardMaterial({ color: 0x8f6d4d, roughness: 0.75 })
+    new THREE.CapsuleGeometry(0.48, 1.22, 8, 18),
+    robeMaterial
   );
   robe.castShadow = true;
   group.add(robe);
 
   const mantle = new THREE.Mesh(
-    new THREE.BoxGeometry(0.98, 0.18, 0.16),
-    new THREE.MeshStandardMaterial({ color: 0x5a4737, roughness: 0.8 })
+    new THREE.BoxGeometry(1.08, 0.22, 0.18),
+    mantleMaterial
   );
   mantle.position.set(0, 0.28, 0.38);
   group.add(mantle);
 
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.31, 24, 24),
-    new THREE.MeshStandardMaterial({ color: 0xd0a06d, roughness: 0.65 })
+    new THREE.SphereGeometry(0.32, 24, 24),
+    skinMaterial
   );
-  head.position.y = 1.02;
+  head.position.y = 1.08;
   head.castShadow = true;
   group.add(head);
 
   const beard = new THREE.Mesh(
-    new THREE.ConeGeometry(0.22, 0.38, 16),
-    new THREE.MeshStandardMaterial({ color: 0xd8d2c4, roughness: 0.9 })
+    new THREE.ConeGeometry(0.24, 0.42, 16),
+    beardMaterial
   );
-  beard.position.set(0, 0.76, 0.24);
+  beard.position.set(0, 0.82, 0.25);
   beard.rotation.x = Math.PI;
   group.add(beard);
+
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.95, 8), leatherMaterial);
+  staff.position.set(0.64, 0.42, 0.22);
+  staff.rotation.z = 0.12;
+  group.add(staff);
+
+  const handGeometry = new THREE.SphereGeometry(0.08, 10, 8);
+  [
+    [-0.44, 0.2, 0.34],
+    [0.48, 0.23, 0.36]
+  ].forEach(([x, y, z]) => {
+    const hand = new THREE.Mesh(handGeometry, skinMaterial);
+    hand.position.set(x, y, z);
+    group.add(hand);
+  });
 
   return group;
 }
@@ -1814,38 +1862,54 @@ function createSheep() {
 
 function createCamel() {
   const group = new THREE.Group();
-  const hideMaterial = new THREE.MeshStandardMaterial({ color: 0xa86f3d, roughness: 0.82 });
-  const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x5c3a22, roughness: 0.85 });
+  const hideMaterial = new THREE.MeshStandardMaterial({ color: 0xc08a55, roughness: 0.82 });
+  const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x6f4527, roughness: 0.85 });
+  const saddleMaterial = new THREE.MeshStandardMaterial({ color: 0x315a72, roughness: 0.78 });
 
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1.3, 8, 16), hideMaterial);
   body.rotation.z = Math.PI / 2;
-  body.scale.set(0.95, 1.25, 0.68);
+  body.scale.set(0.92, 1.35, 0.7);
   body.position.y = 0.85;
   body.castShadow = true;
   body.receiveShadow = true;
   group.add(body);
 
-  [-0.36, 0.34].forEach((x) => {
+  [-0.34, 0.32].forEach((x) => {
     const hump = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), hideMaterial);
-    hump.scale.set(0.86, 1.08, 0.7);
+    hump.scale.set(0.86, 1.26, 0.7);
     hump.position.set(x, 1.22, 0);
     hump.castShadow = true;
     group.add(hump);
   });
 
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 0.9, 10), hideMaterial);
-  neck.position.set(0, 1.25, 0.72);
+  const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.13, 0.86), saddleMaterial);
+  saddle.position.set(0, 1.16, 0);
+  saddle.rotation.x = 0.04;
+  group.add(saddle);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.17, 1.02, 10), hideMaterial);
+  neck.position.set(0, 1.28, 0.77);
   neck.rotation.x = -0.55;
   neck.castShadow = true;
   group.add(neck);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 12), hideMaterial);
-  head.scale.set(0.78, 0.72, 1.18);
-  head.position.set(0, 1.62, 1.05);
+  head.scale.set(0.78, 0.72, 1.34);
+  head.position.set(0, 1.68, 1.14);
   head.castShadow = true;
   group.add(head);
 
-  const legGeometry = new THREE.CylinderGeometry(0.055, 0.07, 0.9, 8);
+  [
+    [-0.08, 1.88, 1.08],
+    [0.08, 1.88, 1.08]
+  ].forEach(([x, y, z]) => {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.18, 8), darkMaterial);
+    ear.position.set(x, y, z);
+    ear.rotation.x = -0.2;
+    group.add(ear);
+  });
+
+  const legGeometry = new THREE.CylinderGeometry(0.052, 0.07, 0.92, 8);
   [
     [-0.56, 0.42, 0.34],
     [0.56, 0.42, 0.34],
@@ -1863,6 +1927,10 @@ function createCamel() {
   tail.rotation.x = 0.55;
   tail.castShadow = true;
   group.add(tail);
+
+  const tailTuft = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), darkMaterial);
+  tailTuft.position.set(0, 0.58, -1.1);
+  group.add(tailTuft);
 
   return group;
 }
@@ -2354,28 +2422,56 @@ function createFallbackEnvironment() {
 
 function createMountainRange() {
   const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({ color: 0x35445a, roughness: 0.95 });
-  const highlight = new THREE.MeshStandardMaterial({ color: 0x526273, roughness: 0.95 });
+  const ridgeMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: 0.96 }),
+    new THREE.MeshStandardMaterial({ color: 0xc09a68, roughness: 0.94 }),
+    new THREE.MeshStandardMaterial({ color: 0x6e6f62, roughness: 0.98 })
+  ];
   const positions = [
-    [-27, -24, 7.8, 8.6],
-    [-18, -29, 6.4, 7.4],
-    [-7, -31, 9.2, 10.2],
-    [8, -30, 7.2, 8.8],
-    [21, -26, 8.4, 9.6],
-    [-30, 7, 6.2, 7.2],
-    [30, 5, 6.6, 7.8]
+    [-28, -30, 9.2, 5.8, 0.2],
+    [-15, -34, 10.8, 7.4, -0.25],
+    [-2, -36, 12.4, 8.5, 0.1],
+    [13, -34, 10.2, 6.9, 0.38],
+    [27, -29, 8.8, 5.9, -0.18],
+    [-35, 4, 7.2, 4.6, 0.6],
+    [35, 2, 7.8, 5.1, -0.55]
   ];
 
-  positions.forEach(([x, z, radius, height], index) => {
-    const mountain = new THREE.Mesh(
-      new THREE.ConeGeometry(radius, height, 5),
-      index % 2 === 0 ? material : highlight
+  positions.forEach(([x, z, width, height, rotation], index) => {
+    const ridge = new THREE.Group();
+    const base = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1, 0),
+      ridgeMaterials[index % ridgeMaterials.length]
     );
-    mountain.position.set(x, height / 2 - 0.6, z);
-    mountain.rotation.y = index * 0.42;
-    mountain.castShadow = true;
-    mountain.receiveShadow = true;
-    group.add(mountain);
+    base.scale.set(width, height * 0.36, width * 0.42);
+    base.position.y = height * 0.22;
+    base.rotation.set(0.08, rotation, -0.04);
+    base.castShadow = true;
+    base.receiveShadow = true;
+    ridge.add(base);
+
+    const shoulder = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1, 0),
+      ridgeMaterials[(index + 1) % ridgeMaterials.length]
+    );
+    shoulder.scale.set(width * 0.52, height * 0.24, width * 0.26);
+    shoulder.position.set(width * 0.18, height * 0.48, -width * 0.04);
+    shoulder.rotation.set(-0.12, rotation + 0.45, 0.18);
+    shoulder.castShadow = true;
+    shoulder.receiveShadow = true;
+    ridge.add(shoulder);
+
+    const face = new THREE.Mesh(
+      new THREE.BoxGeometry(width * 0.52, 0.08, width * 0.18),
+      new THREE.MeshStandardMaterial({ color: 0xd1b07c, roughness: 0.9 })
+    );
+    face.position.set(width * -0.08, height * 0.52, width * 0.18);
+    face.rotation.set(0.26, rotation - 0.2, -0.08);
+    ridge.add(face);
+
+    ridge.position.set(x, -0.18, z);
+    ridge.rotation.y = rotation;
+    group.add(ridge);
   });
 
   return group;
