@@ -1513,12 +1513,6 @@ h2,
   font-weight: 700;
 }
 
-.game-loading [data-loading-copy] {
-  max-width: 360px;
-  color: rgba(255, 255, 255, 0.72);
-  font-weight: 700;
-}
-
 .loading-instructions {
   display: grid;
   max-width: min(520px, calc(100vw - 48px));

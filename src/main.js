@@ -58,7 +58,10 @@ const environmentModelPaths = {
   mountain: './assets/environment/mountains/mountain_01.glb',
   tree: './assets/environment/trees/olive_tree_01.glb',
   rock: './assets/environment/rocks/rock_01.glb',
-  shrub: './assets/environment/shrubs/dry_shrub_01.glb'
+  shrub: './assets/environment/shrubs/dry_shrub_01.glb',
+  palm: './assets/environment/palms/palm_tree.glb',
+  smallTent: './assets/environment/tents/small_tent.glb',
+  bigTent: './assets/environment/tents/big_tent.glb'
 };
 const animalModelPaths = {
   sheep: './assets/animals/sheep_walking.glb',
@@ -505,12 +508,8 @@ function gameView(module) {
         <span class="loading-mark"></span>
         <p class="game-panel-kicker" data-loading-kicker>Preparing the Scene</p>
         <strong data-loading-title>Gather the Dreams</strong>
-        <span data-loading-copy>Loading Joseph, Jacob, animals, and the valley...</span>
         <ul class="loading-instructions">
           <li>Collect all 7 dream stars around the field.</li>
-          <li>Bring Joseph back to Jacob after every star is gathered.</li>
-          <li>Use WASD, arrows, or the mobile D-pad. Hold Run to move faster.</li>
-          <li>Jump with Space or the Jump button.</li>
         </ul>
         <button class="primary-action loading-play" data-game-action="start" disabled>Loading...</button>
       </div>
@@ -834,7 +833,6 @@ function createCollectGame(stage, module) {
   const gameShell = stage.closest('.game-fullscreen');
   const loadingEl = gameShell?.querySelector('[data-game-loading]');
   const loadingTitleEl = gameShell?.querySelector('[data-loading-title]');
-  const loadingCopyEl = gameShell?.querySelector('[data-loading-copy]');
   const loadingKickerEl = gameShell?.querySelector('[data-loading-kicker]');
   const loadingPlayButton = gameShell?.querySelector('.loading-play');
   const readyTasks = [];
@@ -846,12 +844,6 @@ function createCollectGame(stage, module) {
     gameShell?.classList.add('is-ready');
     if (loadingKickerEl) loadingKickerEl.textContent = readyState === 'timeout' ? 'Ready Enough' : 'Scene Ready';
     if (loadingTitleEl) loadingTitleEl.textContent = 'Begin the Challenge';
-    if (loadingCopyEl) {
-      loadingCopyEl.textContent =
-        readyState === 'timeout'
-          ? 'The lightweight scene is ready. A few details may keep loading in the background.'
-          : 'Everything is ready. Press Play when you are ready to begin.';
-    }
     if (loadingPlayButton) {
       loadingPlayButton.disabled = false;
       loadingPlayButton.textContent = 'Play';
@@ -1635,12 +1627,12 @@ function createAnimalScene(starPositions, jacobPosition) {
   const finalStar = new THREE.Vector3(starPositions[5][0], 0.02, starPositions[5][1]);
   const deliveryStar = new THREE.Vector3(starPositions[6][0], 0.02, starPositions[6][1]);
   const flockPlacements = [
-    { center: finalStar, offset: [1.1, -0.9], radius: 0.95, speed: 0.74, phase: 0.2, scale: 0.86 },
-    { center: finalStar, offset: [2.4, 1.2], radius: 0.9, speed: 0.82, phase: 1.5, scale: 0.9 },
-    { center: finalStar, offset: [5.1, -1.5], radius: 1.05, speed: 0.7, phase: 2.6, scale: 0.88 },
-    { center: deliveryStar, offset: [0.6, 1.1], radius: 0.95, speed: 0.76, phase: 3.7, scale: 0.84 },
-    { center: new THREE.Vector3(jacobPosition.x - 1.8, 0.02, jacobPosition.z + 1.8), offset: [0, 0], radius: 1.15, speed: 0.64, phase: 4.6, scale: 0.92 },
-    { center: new THREE.Vector3(jacobPosition.x - 3.5, 0.02, jacobPosition.z + 4.1), offset: [0, 0], radius: 0.9, speed: 0.88, phase: 5.4, scale: 0.86 }
+    { center: finalStar, offset: [1.1, -0.9], range: 2.2, speed: 0.72, phase: 0.2, seed: 11, scale: 0.86 },
+    { center: finalStar, offset: [2.4, 1.2], range: 2.5, speed: 0.78, phase: 1.5, seed: 17, scale: 0.9 },
+    { center: finalStar, offset: [5.1, -1.5], range: 2.4, speed: 0.67, phase: 2.6, seed: 23, scale: 0.88 },
+    { center: deliveryStar, offset: [0.6, 1.1], range: 2.15, speed: 0.74, phase: 3.7, seed: 29, scale: 0.84 },
+    { center: new THREE.Vector3(jacobPosition.x - 1.8, 0.02, jacobPosition.z + 1.8), offset: [0, 0], range: 2.35, speed: 0.62, phase: 4.6, seed: 31, scale: 0.92 },
+    { center: new THREE.Vector3(jacobPosition.x - 3.5, 0.02, jacobPosition.z + 4.1), offset: [0, 0], range: 2.1, speed: 0.76, phase: 5.4, seed: 37, scale: 0.86 }
   ];
 
   flockPlacements.forEach((placement) => {
@@ -1649,18 +1641,18 @@ function createAnimalScene(starPositions, jacobPosition) {
       type: 'sheep',
       fallback: createSheep(),
       height: 1.08,
-      position: [center.x + Math.cos(placement.phase) * placement.radius, 0.02, center.z + Math.sin(placement.phase) * placement.radius],
+      position: [center.x + Math.cos(placement.phase) * placement.range * 0.45, 0.02, center.z + Math.sin(placement.phase) * placement.range * 0.45],
       rotation: placement.phase,
       scale: placement.scale,
       animated: true,
-      moving: {
+      moving: createWanderMotion({
         center,
-        radius: placement.radius,
+        range: placement.range,
         speed: placement.speed,
-        phase: placement.phase,
+        seed: placement.seed,
         collisionRadius: 1.25,
         pushStrength: 2.7
-      }
+      })
     });
     animals.push(animal);
     movingAnimals.push(animal);
@@ -1675,12 +1667,13 @@ function createAnimalScene(starPositions, jacobPosition) {
   standingSheepPlacements.forEach((placement, index) => {
     const animal = createAnimalSlot({
       type: 'sheep',
-      fallback: createSheep(),
+      fallback: createSheep({ grazing: true }),
       height: 1.04,
       position: [placement.x, 0.02, placement.z],
       rotation: placement.rotation,
       scale: placement.scale,
       animated: false,
+      pose: 'grazing',
       stillFrame: index * 0.22
     });
     animals.push(animal);
@@ -1695,14 +1688,14 @@ function createAnimalScene(starPositions, jacobPosition) {
     rotation: -0.65,
     scale: 0.98,
     animated: true,
-    moving: {
+    moving: createWanderMotion({
       center: new THREE.Vector3(starPositions[3][0] + 2.4, 0.05, starPositions[3][1] - 2.2),
-      radius: 1.6,
-      speed: 0.36,
-      phase: 1.2,
+      range: 3.2,
+      speed: 0.48,
+      seed: 43,
       collisionRadius: 1.95,
       pushStrength: 1.9
-    }
+    })
   });
   animals.push(camel);
   movingAnimals.push(camel);
@@ -1714,12 +1707,13 @@ function createAnimalScene(starPositions, jacobPosition) {
   ].forEach((placement, index) => {
     const animal = createAnimalSlot({
       type: 'sheep',
-      fallback: createSheep(),
+      fallback: createSheep({ grazing: true }),
       height: 1.03,
       position: [placement.x, 0.02, placement.z],
       rotation: placement.rotation,
       scale: placement.scale,
       animated: false,
+      pose: 'grazing',
       stillFrame: 0.35 + index * 0.18
     });
     animals.push(animal);
@@ -1735,7 +1729,7 @@ function createAnimalScene(starPositions, jacobPosition) {
   return { group, animals, movingAnimals };
 }
 
-function createAnimalSlot({ type, fallback, height, position, rotation, scale, animated, moving, stillFrame = 0 }) {
+function createAnimalSlot({ type, fallback, height, position, rotation, scale, animated, moving, pose = 'standing', stillFrame = 0 }) {
   const group = new THREE.Group();
   group.position.set(position[0], position[1], position[2]);
   group.rotation.y = rotation;
@@ -1749,10 +1743,39 @@ function createAnimalSlot({ type, fallback, height, position, rotation, scale, a
     scale,
     animated,
     moving,
+    pose,
+    isMoving: Boolean(moving),
     mixer: null,
     action: null,
     stillFrame
   };
+}
+
+function createWanderMotion({ center, range, speed, seed, collisionRadius, pushStrength }) {
+  const moving = {
+    center,
+    range,
+    speed,
+    seed,
+    collisionRadius,
+    pushStrength,
+    target: new THREE.Vector3(),
+    targetIndex: 0,
+    pauseUntil: 0
+  };
+  chooseNextWanderTarget(moving);
+  return moving;
+}
+
+function chooseNextWanderTarget(moving) {
+  const angle = seededNoise(moving.targetIndex, moving.seed) * Math.PI * 2;
+  const distance = moving.range * (0.35 + seededNoise(moving.targetIndex, moving.seed + 7) * 0.65);
+  moving.target.set(
+    moving.center.x + Math.cos(angle) * distance,
+    moving.center.y,
+    moving.center.z + Math.sin(angle) * distance
+  );
+  moving.targetIndex += 1;
 }
 
 function createStarRockClusters(placements) {
@@ -1822,10 +1845,12 @@ function loadAnimalAssets(loader, animalScene, isDisposed, stage) {
           animal.action = animal.mixer.clipAction(gltf.animations[0]);
           animal.action.play();
           if (!animal.animated) {
-            animal.action.time = animal.stillFrame;
-            animal.mixer.update(0);
+            animal.mixer.setTime(animal.stillFrame);
             animal.action.paused = true;
           }
+        }
+        if (animal.pose === 'grazing' && animal.type === 'sheep') {
+          applySheepGrazingPose(model, animal.stillFrame);
         }
 
         loadedCount += 1;
@@ -1846,20 +1871,38 @@ function loadAnimalAssets(loader, animalScene, isDisposed, stage) {
   });
 }
 
+function applySheepGrazingPose(model, variant = 0) {
+  const head = model.getObjectByName('head');
+  const chest = model.getObjectByName('chest');
+  if (head) {
+    head.rotation.x -= 0.72;
+    head.rotation.z += (variant - 0.25) * 0.08;
+  }
+  if (chest) chest.rotation.x += 0.08;
+}
+
 function updateAnimalMotion(animals, player, now, delta, playerBaseY) {
   animals.forEach((animal) => {
     const moving = animal.moving;
     if (!moving) return;
 
-    const time = now * 0.001 * moving.speed + moving.phase;
-    const nextX = moving.center.x + Math.cos(time) * moving.radius;
-    const nextZ = moving.center.z + Math.sin(time) * moving.radius;
-    const moveX = nextX - animal.group.position.x;
-    const moveZ = nextZ - animal.group.position.z;
+    const targetX = moving.target.x - animal.group.position.x;
+    const targetZ = moving.target.z - animal.group.position.z;
+    const targetDistance = Math.hypot(targetX, targetZ);
 
-    animal.group.position.x = nextX;
-    animal.group.position.z = nextZ;
-    if (Math.abs(moveX) + Math.abs(moveZ) > 0.0001) {
+    if (now < moving.pauseUntil) {
+      animal.isMoving = false;
+    } else if (targetDistance < 0.16) {
+      animal.isMoving = false;
+      moving.pauseUntil = now + 700 + seededNoise(moving.targetIndex, moving.seed + 13) * 1500;
+      chooseNextWanderTarget(moving);
+    } else {
+      animal.isMoving = true;
+      const step = Math.min(moving.speed * delta, targetDistance);
+      const moveX = (targetX / targetDistance) * step;
+      const moveZ = (targetZ / targetDistance) * step;
+      animal.group.position.x += moveX;
+      animal.group.position.z += moveZ;
       animal.group.rotation.y = Math.atan2(moveX, moveZ);
     }
 
@@ -1880,12 +1923,12 @@ function updateAnimalMotion(animals, player, now, delta, playerBaseY) {
 function updateAnimalAnimations(animals, delta) {
   animals.forEach((animal) => {
     if (!animal.animated || !animal.mixer || !animal.action) return;
-    animal.action.paused = false;
-    animal.mixer.update(delta);
+    animal.action.paused = !animal.isMoving;
+    if (animal.isMoving) animal.mixer.update(delta);
   });
 }
 
-function createSheep() {
+function createSheep({ grazing = false } = {}) {
   const group = new THREE.Group();
   const woolMaterial = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.85 });
   const faceMaterial = new THREE.MeshStandardMaterial({ color: 0x4f463d, roughness: 0.8 });
@@ -1900,13 +1943,15 @@ function createSheep() {
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 14, 12), faceMaterial);
   head.scale.set(0.82, 0.92, 1.08);
-  head.position.set(0, 0.62, 0.58);
+  head.position.set(0, grazing ? 0.31 : 0.62, grazing ? 0.68 : 0.58);
+  head.rotation.x = grazing ? 0.62 : 0;
   head.castShadow = true;
   group.add(head);
 
   const woolCap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), woolMaterial);
   woolCap.scale.set(1.08, 0.72, 0.78);
-  woolCap.position.set(0, 0.83, 0.47);
+  woolCap.position.set(0, grazing ? 0.47 : 0.83, grazing ? 0.57 : 0.47);
+  woolCap.rotation.x = grazing ? 0.62 : 0;
   woolCap.castShadow = true;
   group.add(woolCap);
 
@@ -2018,13 +2063,10 @@ function createGrassArenaGround(starPositions, jacobPosition) {
   const grassTufts = createGrassTufts(starPositions, jacobPosition);
   group.add(grassTufts);
 
-  const campDecorations = createCampDecorations();
-  group.add(campDecorations);
-
   return group;
 }
 
-function createCampDecorations() {
+function createFallbackCampDecorations() {
   const group = new THREE.Group();
   const palmPlacements = [
     { x: -23, z: -27, height: 5.8, rotation: 0.2 },
@@ -2037,7 +2079,11 @@ function createCampDecorations() {
   const tentPlacements = [
     { x: -27, z: -7, scale: 1.35, rotation: 0.5 },
     { x: -21, z: -10, scale: 1.05, rotation: 0.25 },
-    { x: 23, z: 24, scale: 1.2, rotation: -0.75 }
+    { x: 23, z: 24, scale: 1.2, rotation: -0.75 },
+    { x: -15.5, z: -6.5, scale: 1.12, rotation: 0.82 },
+    { x: 19.5, z: 25.5, scale: 1.1, rotation: -0.35 },
+    { x: 16.5, z: -26.5, scale: 1.16, rotation: 0.55 },
+    { x: 27, z: -20.5, scale: 1.08, rotation: -1.08 }
   ];
 
   palmPlacements.forEach((placement) => {
@@ -2455,7 +2501,8 @@ function loadEnvironmentAssets(loader, scene, fallbackEnvironment, isDisposed, s
       return false;
     }
 
-    if (!assets.mountain || !assets.tree || !assets.rock || !assets.shrub) {
+    const requiredAssets = ['mountain', 'tree', 'rock', 'shrub', 'palm', 'smallTent', 'bigTent'];
+    if (requiredAssets.some((key) => !assets[key])) {
       console.warn('Some environment GLBs failed to load, keeping fallback scenery.');
       Object.values(assets).forEach(disposeObject);
       stage.dataset.environment = 'partial';
@@ -2524,7 +2571,68 @@ function createTexturedEnvironment(assets) {
     { x: 15, z: -19, height: 1.25, rotation: 0.4 }
   ]);
 
+  addInstancedEnvironment(group, assets.palm, [
+    { x: -25, z: -25, height: 6.4, rotation: 0.2 },
+    { x: -15, z: -29, height: 5.7, rotation: -0.65 },
+    { x: -29, z: -13, height: 6.1, rotation: 1.1 },
+    { x: -28, z: 7, height: 5.4, rotation: -1.4 },
+    { x: -24, z: 23, height: 6.7, rotation: 2.2 },
+    { x: -8, z: 29, height: 5.8, rotation: -2.6 },
+    { x: 10, z: 29, height: 6.3, rotation: 0.9 },
+    { x: 26, z: 20, height: 5.6, rotation: -0.2 },
+    { x: 29, z: 5, height: 6.6, rotation: 1.8 },
+    { x: 28, z: -12, height: 5.9, rotation: -1.05 },
+    { x: 25.5, z: -27.5, height: 6.8, rotation: 0.45 },
+    { x: 15.5, z: -30, height: 5.5, rotation: -2.1 }
+  ]);
+
+  addEnvironmentInstances(group, assets.smallTent, [
+    { x: -25.5, z: -7, height: 2.35, rotation: 0.45 },
+    { x: -20.5, z: -11, height: 2.15, rotation: 0.2 },
+    { x: 24.5, z: 21.5, height: 2.4, rotation: -0.7 },
+    { x: -15.5, z: -6.5, height: 2.25, rotation: 0.82 },
+    { x: 19.5, z: 25.5, height: 2.2, rotation: -0.35 },
+    { x: 16.5, z: -26.5, height: 2.3, rotation: 0.55 },
+    { x: 27, z: -20.5, height: 2.15, rotation: -1.08 }
+  ]);
+
+  addEnvironmentInstances(group, assets.bigTent, [
+    { x: 22.5, z: -27.5, height: 4.35, rotation: -0.68 }
+  ]);
+
   return group;
+}
+
+function addInstancedEnvironment(group, source, placements) {
+  const prototype = source.clone(true);
+  normalizeModelToHeight(prototype, 1);
+  prototype.updateMatrixWorld(true);
+
+  prototype.traverse((object) => {
+    if (!object.isMesh) return;
+
+    const instances = new THREE.InstancedMesh(object.geometry, object.material, placements.length);
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const placementMatrix = new THREE.Matrix4();
+    const instanceMatrix = new THREE.Matrix4();
+
+    placements.forEach((placement, index) => {
+      position.set(placement.x, 0, placement.z);
+      rotation.setFromEuler(new THREE.Euler(0, placement.rotation, 0));
+      scale.setScalar(placement.height);
+      placementMatrix.compose(position, rotation, scale);
+      instanceMatrix.multiplyMatrices(placementMatrix, object.matrixWorld);
+      instances.setMatrixAt(index, instanceMatrix);
+    });
+
+    instances.instanceMatrix.needsUpdate = true;
+    instances.castShadow = true;
+    instances.receiveShadow = true;
+    instances.frustumCulled = false;
+    group.add(instances);
+  });
 }
 
 function addEnvironmentInstances(group, source, placements) {
@@ -2598,6 +2706,7 @@ function createFallbackEnvironment() {
   const group = new THREE.Group();
   group.add(createMountainRange());
   group.add(createTreeCluster());
+  group.add(createFallbackCampDecorations());
   return group;
 }
 
