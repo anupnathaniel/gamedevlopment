@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/GLTFLoader.js';
+import { MeshoptDecoder } from '../vendor/meshopt_decoder.mjs';
 import { modules } from './storyData.js';
 
 const app = document.querySelector('#app');
@@ -66,6 +67,13 @@ const environmentModelPaths = {
 const animalModelPaths = {
   sheep: './assets/animals/sheep_walking.glb',
   camel: './assets/animals/camel_walking.glb'
+};
+const birdModelPaths = {
+  heron: './assets/animals/birds/heron.glb',
+  falcon: './assets/animals/birds/falcon.glb',
+  hoopoe: './assets/animals/birds/hoopoe.glb',
+  raven: './assets/animals/birds/raven.glb',
+  dove: './assets/animals/birds/dove.glb'
 };
 const gameAudioPath = './assets/audio/bg_game_audio_journey_of_promise.mp3';
 const starPickupAudioPath = './assets/audio/star-picked.wav';
@@ -734,7 +742,7 @@ function createCollectGame(stage, module) {
   camera.lookAt(0, 1.2, 0);
 
   const renderer = new THREE.WebGLRenderer({ antialias: !lightweightMode, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(lightweightMode ? 1 : Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(lightweightMode ? 1 : Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = !lightweightMode;
   stage.appendChild(renderer.domElement);
 
@@ -766,6 +774,8 @@ function createCollectGame(stage, module) {
   const jacobPosition = new THREE.Vector3(18, 0.55, -22);
   const cameraOffset = new THREE.Vector3(0, 1.2, 6.2);
   const cameraTarget = new THREE.Vector3();
+  const cameraDesiredPosition = new THREE.Vector3();
+  const movementDirection = new THREE.Vector3();
   const minCameraDistance = 4.2;
   const maxCameraDistance = 16;
   let cameraDistance = cameraOffset.z;
@@ -787,6 +797,8 @@ function createCollectGame(stage, module) {
   scene.add(fallbackEnvironment);
   const animalScene = createAnimalScene(starPositions, jacobPosition);
   scene.add(animalScene.group);
+  const birdScene = createBirdScene(jacobPosition);
+  scene.add(birdScene.group);
 
   const robe = new THREE.Group();
   const placeholder = createFallbackJoseph();
@@ -817,7 +829,7 @@ function createCollectGame(stage, module) {
   deliveryBeacon.visible = false;
   scene.add(deliveryBeacon);
 
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   let josephWalkModel = null;
   let josephRunModel = null;
   let josephJumpModel = null;
@@ -866,12 +878,14 @@ function createCollectGame(stage, module) {
     });
   };
 
+  trackReadyTask(loadEnvironmentAssets(loader, scene, fallbackEnvironment, () => disposed, stage, !lightweightMode));
+
   if (lightweightMode) {
-    stage.dataset.environment = 'fallback';
     stage.dataset.animals = 'fallback';
+    stage.dataset.birds = 'fallback';
   } else {
-    trackReadyTask(loadEnvironmentAssets(loader, scene, fallbackEnvironment, () => disposed, stage));
     trackReadyTask(loadAnimalAssets(loader, animalScene, () => disposed, stage));
+    trackReadyTask(loadBirdAssets(loader, birdScene, () => disposed, stage));
   }
 
   trackReadyTask(
@@ -919,7 +933,6 @@ function createCollectGame(stage, module) {
           disposeObject(gltf.scene);
           return false;
         }
-
         const model = gltf.scene;
         josephRunModel = model;
         normalizeModelToHeight(model, 2);
@@ -955,7 +968,6 @@ function createCollectGame(stage, module) {
           disposeObject(gltf.scene);
           return false;
         }
-
         const model = gltf.scene;
         josephJumpModel = model;
         normalizeModelToHeight(model, 2);
@@ -1349,22 +1361,23 @@ function createCollectGame(stage, module) {
   const animate = (now) => {
     const delta = Math.min((now - lastTick) / 1000, 0.04);
     lastTick = now;
+    updateBirdFlight(birdScene.flyingBirds, now);
 
     if (running) {
-      const direction = new THREE.Vector3();
-      if (keys.has('arrowup') || keys.has('w')) direction.z -= 1;
-      if (keys.has('arrowdown') || keys.has('s')) direction.z += 1;
-      if (keys.has('arrowleft') || keys.has('a')) direction.x -= 1;
-      if (keys.has('arrowright') || keys.has('d')) direction.x += 1;
-      const isMoving = direction.lengthSq() > 0;
+      movementDirection.set(0, 0, 0);
+      if (keys.has('arrowup') || keys.has('w')) movementDirection.z -= 1;
+      if (keys.has('arrowdown') || keys.has('s')) movementDirection.z += 1;
+      if (keys.has('arrowleft') || keys.has('a')) movementDirection.x -= 1;
+      if (keys.has('arrowright') || keys.has('d')) movementDirection.x += 1;
+      const isMoving = movementDirection.lengthSq() > 0;
       const isRunning = isMoving && keys.has('shift');
 
       if (isMoving) {
-        direction.normalize();
+        movementDirection.normalize();
         const currentSpeed = playerSpeed * (isRunning ? runMultiplier : 1);
-        robe.position.x += direction.x * delta * currentSpeed;
-        robe.position.z += direction.z * delta * currentSpeed;
-        robe.rotation.y = Math.atan2(direction.x, direction.z);
+        robe.position.x += movementDirection.x * delta * currentSpeed;
+        robe.position.z += movementDirection.z * delta * currentSpeed;
+        robe.rotation.y = Math.atan2(movementDirection.x, movementDirection.z);
       }
 
       if (!isGrounded) {
@@ -1455,7 +1468,8 @@ function createCollectGame(stage, module) {
     deliveryBeacon.position.y = 2.95 + Math.sin(now / 260) * 0.18;
     jacob.rotation.y = Math.atan2(robe.position.x - jacob.position.x, robe.position.z - jacob.position.z);
     cameraTarget.set(robe.position.x, 1.2, robe.position.z);
-    camera.position.lerp(cameraTarget.clone().add(cameraOffset), 0.08);
+    cameraDesiredPosition.copy(cameraTarget).add(cameraOffset);
+    camera.position.lerp(cameraDesiredPosition, 0.08);
     camera.lookAt(cameraTarget);
     renderer.render(scene, camera);
     animationFrame = requestAnimationFrame(animate);
@@ -1720,13 +1734,166 @@ function createAnimalScene(starPositions, jacobPosition) {
     group.add(animal.group);
   });
 
-  const rockCluster = createStarRockClusters([
-    { x: starPositions[1][0], z: starPositions[1][1], rotation: 0.2 },
-    { x: starPositions[4][0], z: starPositions[4][1], rotation: -0.7 }
-  ]);
-  group.add(rockCluster);
-
   return { group, animals, movingAnimals };
+}
+
+function createBirdScene(jacobPosition) {
+  const group = new THREE.Group();
+  const birds = [];
+  const flyingBirds = [];
+  const flightConfigs = [
+    {
+      type: 'heron',
+      height: 0.95,
+      duration: 42,
+      phase: 0.03,
+      bob: 0.32,
+      points: [[-28, 7.5, -18], [-12, 9, -34], [14, 8.4, -30], [30, 7.2, -10], [18, 8.8, 10], [-9, 7.8, 16], [-27, 6.8, 3]]
+    },
+    {
+      type: 'falcon',
+      height: 0.78,
+      duration: 31,
+      phase: 0.22,
+      bob: 0.45,
+      points: [[-24, 11, -8], [-6, 13, -31], [22, 10.5, -24], [30, 9.2, 4], [5, 12, 19], [-22, 10, 12]]
+    },
+    {
+      type: 'hoopoe',
+      height: 0.52,
+      duration: 34,
+      phase: 0.41,
+      bob: 0.38,
+      points: [[-18, 6.2, -26], [6, 7.4, -33], [26, 6.8, -14], [20, 7.6, 12], [-5, 6.5, 18], [-26, 7.1, -1]]
+    },
+    {
+      type: 'raven',
+      height: 0.64,
+      duration: 37,
+      phase: 0.59,
+      bob: 0.5,
+      points: [[-30, 8.5, -4], [-18, 9.8, -28], [9, 8.2, -35], [28, 9.4, -15], [25, 8.1, 14], [-7, 9.2, 20], [-27, 8, 11]]
+    },
+    {
+      type: 'dove',
+      height: 0.54,
+      duration: 29,
+      phase: 0.76,
+      bob: 0.35,
+      points: [[-22, 7, -12], [-2, 8.5, -29], [24, 7.2, -20], [28, 8, 8], [2, 7.4, 21], [-25, 8.2, 7]]
+    }
+  ];
+
+  flightConfigs.forEach((config) => {
+    const curve = new THREE.CatmullRomCurve3(
+      config.points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
+      true,
+      'catmullrom',
+      0.45
+    );
+    const groupPosition = curve.getPointAt(config.phase);
+    const bird = createBirdSlot({
+      type: config.type,
+      height: config.height,
+      position: groupPosition,
+      fallback: createFallbackBird(config.type, false),
+      flight: {
+        curve,
+        duration: config.duration,
+        phase: config.phase,
+        bob: config.bob,
+        bank: 0,
+        point: new THREE.Vector3(),
+        tangent: new THREE.Vector3(),
+        nextTangent: new THREE.Vector3()
+      }
+    });
+    birds.push(bird);
+    flyingBirds.push(bird);
+    group.add(bird.group);
+  });
+
+  const perchPosition = new THREE.Vector3(jacobPosition.x + 1.7, 0, jacobPosition.z + 0.45);
+  group.add(createFalconPerch(perchPosition));
+  const perchedFalcon = createBirdSlot({
+    type: 'falcon',
+    height: 0.72,
+    position: new THREE.Vector3(perchPosition.x, 1.28, perchPosition.z),
+    rotation: -2.2,
+    fallback: createFallbackBird('falcon', true),
+    perched: true
+  });
+  birds.push(perchedFalcon);
+  group.add(perchedFalcon.group);
+
+  return { group, birds, flyingBirds };
+}
+
+function createBirdSlot({ type, height, position, rotation = 0, fallback, flight = null, perched = false }) {
+  const group = new THREE.Group();
+  group.position.copy(position);
+  group.rotation.y = rotation;
+  group.add(fallback);
+  return { type, height, group, fallback, flight, perched };
+}
+
+function createFalconPerch(position) {
+  const group = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x6b4227, roughness: 0.94 });
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.25, 9), wood);
+  post.position.y = 0.62;
+  post.castShadow = true;
+  group.add(post);
+
+  const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.72, 8), wood);
+  crossbar.position.y = 1.23;
+  crossbar.rotation.z = Math.PI / 2;
+  crossbar.castShadow = true;
+  group.add(crossbar);
+  group.position.copy(position);
+  return group;
+}
+
+function createFallbackBird(type, perched) {
+  const group = new THREE.Group();
+  const colors = {
+    heron: [0xc4c7c0, 0x39404a],
+    falcon: [0x8c6745, 0x3f2f25],
+    hoopoe: [0xd69b55, 0x2d2927],
+    raven: [0x20242b, 0x111319],
+    dove: [0xd8d4c9, 0x77756e]
+  };
+  const [bodyColor, wingColor] = colors[type] || colors.dove;
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.82 });
+  const wingMaterial = new THREE.MeshStandardMaterial({ color: wingColor, roughness: 0.86, side: THREE.DoubleSide });
+  const beakMaterial = new THREE.MeshStandardMaterial({ color: 0xc59a48, roughness: 0.76 });
+
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), bodyMaterial);
+  body.scale.set(0.72, 0.68, 1.5);
+  body.castShadow = perched;
+  group.add(body);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), bodyMaterial);
+  head.position.set(0, 0.1, 0.34);
+  head.castShadow = perched;
+  group.add(head);
+
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.22, 7), beakMaterial);
+  beak.position.set(0, 0.08, 0.52);
+  beak.rotation.x = Math.PI / 2;
+  group.add(beak);
+
+  [-1, 1].forEach((side) => {
+    const wing = new THREE.Mesh(new THREE.ConeGeometry(0.18, perched ? 0.48 : 0.9, 5), wingMaterial);
+    wing.position.set(side * (perched ? 0.14 : 0.4), 0, -0.02);
+    wing.rotation.z = side * (perched ? 0.18 : Math.PI / 2);
+    wing.rotation.y = side * 0.08;
+    wing.scale.z = 0.25;
+    wing.castShadow = perched;
+    group.add(wing);
+  });
+
+  return group;
 }
 
 function createAnimalSlot({ type, fallback, height, position, rotation, scale, animated, moving, pose = 'standing', stillFrame = 0 }) {
@@ -1778,96 +1945,147 @@ function chooseNextWanderTarget(moving) {
   moving.targetIndex += 1;
 }
 
-function createStarRockClusters(placements) {
-  const group = new THREE.Group();
-  const materials = [
-    new THREE.MeshStandardMaterial({ color: 0x5d5748, roughness: 0.92 }),
-    new THREE.MeshStandardMaterial({ color: 0x766a55, roughness: 0.9 }),
-    new THREE.MeshStandardMaterial({ color: 0x49483f, roughness: 0.95 })
-  ];
-
-  placements.forEach((placement, placementIndex) => {
-    const cluster = new THREE.Group();
-    [
-      [-1.45, 0.25, 0.35, 0.72],
-      [1.18, 0.18, -0.5, 0.52],
-      [0.38, 0.2, 1.24, 0.44],
-      [-0.22, 0.14, -1.08, 0.36]
-    ].forEach(([x, y, z, radius], index) => {
-      const rock = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(radius, 0),
-        materials[(placementIndex + index) % materials.length]
-      );
-      rock.position.set(x, y, z);
-      rock.scale.set(1.2, 0.58 + index * 0.08, 0.85);
-      rock.rotation.set(index * 0.31, placement.rotation + index * 0.6, index * 0.18);
-      rock.castShadow = true;
-      rock.receiveShadow = true;
-      cluster.add(rock);
-    });
-    cluster.position.set(placement.x, 0, placement.z);
-    cluster.rotation.y = placement.rotation;
-    group.add(cluster);
-  });
-
-  return group;
-}
-
 function loadAnimalAssets(loader, animalScene, isDisposed, stage) {
   stage.dataset.animals = 'fallback';
-  let loadedCount = 0;
-
-  const requests = animalScene.animals.map((animal) => {
-    const path = animal.type === 'camel' ? animalModelPaths.camel : animalModelPaths.sheep;
-    return loadGltf(loader, path)
-      .then((gltf) => {
-        if (isDisposed()) {
-          disposeObject(gltf.scene);
-          return false;
-        }
-
-        animal.group.remove(animal.fallback);
-        disposeObject(animal.fallback);
-
-        const model = gltf.scene;
-        normalizeModelToHeight(model, animal.height);
-        model.position.y -= 0.02;
-        model.traverse((object) => {
-          if (object.isMesh) {
-            object.castShadow = true;
-            object.receiveShadow = true;
-          }
-        });
-        animal.group.add(model);
-
-        if (gltf.animations.length) {
-          animal.mixer = new THREE.AnimationMixer(model);
-          animal.action = animal.mixer.clipAction(gltf.animations[0]);
-          animal.action.play();
-          if (!animal.animated) {
-            animal.mixer.setTime(animal.stillFrame);
-            animal.action.paused = true;
-          }
-        }
-        if (animal.pose === 'grazing' && animal.type === 'sheep') {
-          applySheepGrazingPose(model, animal.stillFrame);
-        }
-
-        loadedCount += 1;
-        stage.dataset.animals = loadedCount === animalScene.animals.length ? 'glb' : 'loading';
-        return true;
-      })
-      .catch((error) => {
-        console.warn(`${animal.type} GLB failed to load, using fallback animal.`, error);
-        return false;
-      });
-  });
+  const requests = Object.entries(animalModelPaths).map(([type, path]) =>
+    loadGltf(loader, path).then((gltf) => [type, gltf])
+  );
 
   return Promise.allSettled(requests).then((results) => {
-    if (isDisposed()) return false;
-    const successfulLoads = results.filter((result) => result.status === 'fulfilled' && result.value).length;
-    stage.dataset.animals = successfulLoads === animalScene.animals.length ? 'glb' : 'partial';
-    return successfulLoads > 0;
+    const assets = Object.fromEntries(
+      results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value)
+    );
+
+    if (isDisposed()) {
+      Object.values(assets).forEach((asset) => disposeObject(asset.scene));
+      return false;
+    }
+
+    let loadedCount = 0;
+    animalScene.animals.forEach((animal) => {
+      const asset = assets[animal.type];
+      if (!asset) return;
+
+      animal.group.remove(animal.fallback);
+      disposeObject(animal.fallback);
+      const model = cloneSkinnedModel(asset.scene);
+      normalizeModelToHeight(model, animal.height);
+      model.position.y -= 0.02;
+      model.traverse((object) => {
+        if (object.isMesh) {
+          object.castShadow = true;
+          object.receiveShadow = true;
+        }
+      });
+      animal.group.add(model);
+
+      if (asset.animations.length) {
+        animal.mixer = new THREE.AnimationMixer(model);
+        animal.action = animal.mixer.clipAction(asset.animations[0]);
+        animal.action.play();
+        if (!animal.animated) {
+          animal.mixer.setTime(animal.stillFrame);
+          animal.action.paused = true;
+        }
+      }
+      if (animal.pose === 'grazing' && animal.type === 'sheep') {
+        applySheepGrazingPose(model, animal.stillFrame);
+      }
+      loadedCount += 1;
+    });
+
+    stage.dataset.animals = loadedCount === animalScene.animals.length ? 'glb' : loadedCount > 0 ? 'partial' : 'fallback';
+    return loadedCount > 0;
+  });
+}
+
+function cloneSkinnedModel(source) {
+  const clone = source.clone(true);
+  const sourceLookup = new Map();
+  const cloneLookup = new Map();
+
+  parallelTraverse(source, clone, (sourceNode, cloneNode) => {
+    sourceLookup.set(cloneNode, sourceNode);
+    cloneLookup.set(sourceNode, cloneNode);
+  });
+
+  clone.traverse((node) => {
+    if (!node.isSkinnedMesh) return;
+    const sourceMesh = sourceLookup.get(node);
+    node.skeleton = sourceMesh.skeleton.clone();
+    node.bindMatrix.copy(sourceMesh.bindMatrix);
+    node.skeleton.bones = sourceMesh.skeleton.bones.map((bone) => cloneLookup.get(bone));
+  });
+
+  return clone;
+}
+
+function parallelTraverse(source, clone, callback) {
+  callback(source, clone);
+  for (let index = 0; index < source.children.length; index += 1) {
+    parallelTraverse(source.children[index], clone.children[index], callback);
+  }
+}
+
+function loadBirdAssets(loader, birdScene, isDisposed, stage) {
+  stage.dataset.birds = 'fallback';
+  const requests = Object.entries(birdModelPaths).map(([type, path]) =>
+    loadGltf(loader, path).then((gltf) => [type, gltf.scene])
+  );
+
+  return Promise.allSettled(requests).then((results) => {
+    const assets = Object.fromEntries(
+      results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value)
+    );
+
+    if (isDisposed()) {
+      Object.values(assets).forEach(disposeObject);
+      return false;
+    }
+
+    let loadedCount = 0;
+    birdScene.birds.forEach((bird) => {
+      const source = assets[bird.type];
+      if (!source) return;
+
+      bird.group.remove(bird.fallback);
+      disposeObject(bird.fallback);
+      const model = source.clone(true);
+      normalizeModelToHeight(model, bird.height);
+      model.traverse((object) => {
+        if (!object.isMesh) return;
+        object.castShadow = bird.perched;
+        object.receiveShadow = bird.perched;
+      });
+      bird.group.add(model);
+      loadedCount += 1;
+    });
+
+    stage.dataset.birds = loadedCount === birdScene.birds.length ? 'glb' : loadedCount > 0 ? 'partial' : 'fallback';
+    return loadedCount > 0;
+  });
+}
+
+function updateBirdFlight(birds, now) {
+  birds.forEach((bird) => {
+    const flight = bird.flight;
+    const progress = (now * 0.001 / flight.duration + flight.phase) % 1;
+    const nextProgress = (progress + 0.006) % 1;
+    flight.curve.getPointAt(progress, flight.point);
+    flight.curve.getTangentAt(progress, flight.tangent).normalize();
+    flight.curve.getTangentAt(nextProgress, flight.nextTangent).normalize();
+
+    bird.group.position.copy(flight.point);
+    bird.group.position.y += Math.sin(now * 0.0024 + flight.phase * Math.PI * 2) * flight.bob;
+    bird.group.rotation.y = Math.atan2(flight.tangent.x, flight.tangent.z);
+    bird.group.rotation.x = -flight.tangent.y * 0.45;
+    const turn = flight.tangent.x * flight.nextTangent.z - flight.tangent.z * flight.nextTangent.x;
+    flight.bank = THREE.MathUtils.lerp(flight.bank, THREE.MathUtils.clamp(turn * 9, -0.42, 0.42), 0.08);
+    bird.group.rotation.z = flight.bank;
   });
 }
 
@@ -2068,14 +2286,6 @@ function createGrassArenaGround(starPositions, jacobPosition) {
 
 function createFallbackCampDecorations() {
   const group = new THREE.Group();
-  const palmPlacements = [
-    { x: -23, z: -27, height: 5.8, rotation: 0.2 },
-    { x: -28, z: 15, height: 5.2, rotation: -0.7 },
-    { x: 24, z: -27, height: 6.1, rotation: 0.8 },
-    { x: 28, z: 14, height: 5.4, rotation: -1.1 },
-    { x: 10, z: 30, height: 5.7, rotation: 1.5 },
-    { x: -6, z: -31, height: 5.1, rotation: -2.3 }
-  ];
   const tentPlacements = [
     { x: -27, z: -7, scale: 1.35, rotation: 0.5 },
     { x: -21, z: -10, scale: 1.05, rotation: 0.25 },
@@ -2086,53 +2296,11 @@ function createFallbackCampDecorations() {
     { x: 27, z: -20.5, scale: 1.08, rotation: -1.08 }
   ];
 
-  palmPlacements.forEach((placement) => {
-    const palm = createPalmTree(placement.height);
-    palm.position.set(placement.x, 0.02, placement.z);
-    palm.rotation.y = placement.rotation;
-    group.add(palm);
-  });
-
   tentPlacements.forEach((placement) => {
     const tent = createTent(placement.scale);
     tent.position.set(placement.x, 0.02, placement.z);
     tent.rotation.y = placement.rotation;
     group.add(tent);
-  });
-
-  return group;
-}
-
-function createPalmTree(height = 5.5) {
-  const group = new THREE.Group();
-  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x76502e, roughness: 0.88 });
-  const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x3f6f35, roughness: 0.78, side: THREE.DoubleSide });
-  const fruitMaterial = new THREE.MeshStandardMaterial({ color: 0x7a4a24, roughness: 0.84 });
-
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, height, 9), trunkMaterial);
-  trunk.position.y = height / 2;
-  trunk.rotation.z = 0.08;
-  trunk.castShadow = true;
-  trunk.receiveShadow = true;
-  group.add(trunk);
-
-  const crownY = height + 0.08;
-  for (let i = 0; i < 9; i += 1) {
-    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.22, 2.25, 4), leafMaterial);
-    const angle = (i / 9) * Math.PI * 2;
-    leaf.position.set(Math.cos(angle) * 0.58, crownY, Math.sin(angle) * 0.58);
-    leaf.rotation.z = Math.PI / 2.5;
-    leaf.rotation.y = -angle;
-    leaf.scale.set(0.7, 1, 0.16);
-    leaf.castShadow = true;
-    group.add(leaf);
-  }
-
-  [-0.16, 0.02, 0.18].forEach((x, index) => {
-    const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), fruitMaterial);
-    fruit.position.set(x, crownY - 0.2, 0.08 + index * 0.08);
-    fruit.castShadow = true;
-    group.add(fruit);
   });
 
   return group;
@@ -2474,10 +2642,11 @@ function createTwilightSky() {
   return new THREE.Mesh(geometry, material);
 }
 
-function loadEnvironmentAssets(loader, scene, fallbackEnvironment, isDisposed, stage) {
+function loadEnvironmentAssets(loader, scene, fallbackEnvironment, isDisposed, stage, includePalms = true) {
   stage.dataset.environment = 'fallback';
 
-  const requests = Object.entries(environmentModelPaths).map(
+  const environmentEntries = Object.entries(environmentModelPaths).filter(([key]) => includePalms || key !== 'palm');
+  const requests = environmentEntries.map(
     ([key, path]) =>
       new Promise((resolve, reject) => {
         loader.load(
@@ -2501,7 +2670,8 @@ function loadEnvironmentAssets(loader, scene, fallbackEnvironment, isDisposed, s
       return false;
     }
 
-    const requiredAssets = ['mountain', 'tree', 'rock', 'shrub', 'palm', 'smallTent', 'bigTent'];
+    const requiredAssets = ['mountain', 'tree', 'rock', 'shrub', 'smallTent', 'bigTent'];
+    if (includePalms) requiredAssets.push('palm');
     if (requiredAssets.some((key) => !assets[key])) {
       console.warn('Some environment GLBs failed to load, keeping fallback scenery.');
       Object.values(assets).forEach(disposeObject);
@@ -2571,20 +2741,22 @@ function createTexturedEnvironment(assets) {
     { x: 15, z: -19, height: 1.25, rotation: 0.4 }
   ]);
 
-  addInstancedEnvironment(group, assets.palm, [
-    { x: -25, z: -25, height: 6.4, rotation: 0.2 },
-    { x: -15, z: -29, height: 5.7, rotation: -0.65 },
-    { x: -29, z: -13, height: 6.1, rotation: 1.1 },
-    { x: -28, z: 7, height: 5.4, rotation: -1.4 },
-    { x: -24, z: 23, height: 6.7, rotation: 2.2 },
-    { x: -8, z: 29, height: 5.8, rotation: -2.6 },
-    { x: 10, z: 29, height: 6.3, rotation: 0.9 },
-    { x: 26, z: 20, height: 5.6, rotation: -0.2 },
-    { x: 29, z: 5, height: 6.6, rotation: 1.8 },
-    { x: 28, z: -12, height: 5.9, rotation: -1.05 },
-    { x: 25.5, z: -27.5, height: 6.8, rotation: 0.45 },
-    { x: 15.5, z: -30, height: 5.5, rotation: -2.1 }
-  ]);
+  if (assets.palm) {
+    addEnvironmentInstances(group, assets.palm, [
+      { x: -25, z: -25, height: 6.4, rotation: 0.2 },
+      { x: -15, z: -29, height: 5.7, rotation: -0.65 },
+      { x: -29, z: -13, height: 6.1, rotation: 1.1 },
+      { x: -28, z: 7, height: 5.4, rotation: -1.4 },
+      { x: -24, z: 23, height: 6.7, rotation: 2.2 },
+      { x: -8, z: 29, height: 5.8, rotation: -2.6 },
+      { x: 10, z: 29, height: 6.3, rotation: 0.9 },
+      { x: 26, z: 20, height: 5.6, rotation: -0.2 },
+      { x: 29, z: 5, height: 6.6, rotation: 1.8 },
+      { x: 28, z: -12, height: 5.9, rotation: -1.05 },
+      { x: 25.5, z: -27.5, height: 6.8, rotation: 0.45 },
+      { x: 15.5, z: -30, height: 5.5, rotation: -2.1 }
+    ]);
+  }
 
   addEnvironmentInstances(group, assets.smallTent, [
     { x: -25.5, z: -7, height: 2.35, rotation: 0.45 },
@@ -2603,14 +2775,13 @@ function createTexturedEnvironment(assets) {
   return group;
 }
 
-function addInstancedEnvironment(group, source, placements) {
+function addEnvironmentInstances(group, source, placements) {
   const prototype = source.clone(true);
   normalizeModelToHeight(prototype, 1);
   prototype.updateMatrixWorld(true);
 
   prototype.traverse((object) => {
     if (!object.isMesh) return;
-
     const instances = new THREE.InstancedMesh(object.geometry, object.material, placements.length);
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
@@ -2630,46 +2801,42 @@ function addInstancedEnvironment(group, source, placements) {
     instances.instanceMatrix.needsUpdate = true;
     instances.castShadow = true;
     instances.receiveShadow = true;
-    instances.frustumCulled = false;
+    instances.computeBoundingSphere();
     group.add(instances);
   });
 }
 
-function addEnvironmentInstances(group, source, placements) {
-  placements.forEach((placement) => {
-    const instance = source.clone(true);
-    normalizeModelToHeight(instance, placement.height);
-    instance.position.set(placement.x, 0, placement.z);
-    instance.rotation.y = placement.rotation;
-    instance.traverse((object) => {
-      if (object.isMesh) {
-        object.castShadow = true;
-        object.receiveShadow = true;
-      }
-    });
-    group.add(instance);
-  });
-}
-
 function applyRelaxedArmPose(model) {
-  const adjustments = [
-    ['LeftShoulder', { z: 0.45 }],
-    ['LeftArm', { z: 1.25, x: -0.1 }],
-    ['LeftForeArm', { z: 0.35, x: -0.08 }],
-    ['LeftHand', { z: 0.12 }],
-    ['RightShoulder', { z: -0.45 }],
-    ['RightArm', { z: -1.25, x: -0.1 }],
-    ['RightForeArm', { z: -0.35, x: -0.08 }],
-    ['RightHand', { z: -0.12 }]
-  ];
+  const alignBoneToDirection = (boneName, childName, targetDirection) => {
+    const bone = model.getObjectByName(boneName);
+    const child = model.getObjectByName(childName);
+    if (!bone || !child || !bone.parent) return;
 
-  adjustments.forEach(([name, rotation]) => {
-    const bone = model.getObjectByName(name);
-    if (!bone) return;
-    bone.rotation.x += rotation.x || 0;
-    bone.rotation.y += rotation.y || 0;
-    bone.rotation.z += rotation.z || 0;
+    model.updateMatrixWorld(true);
+    const bonePosition = new THREE.Vector3();
+    const childPosition = new THREE.Vector3();
+    bone.getWorldPosition(bonePosition);
+    child.getWorldPosition(childPosition);
+
+    const currentDirection = childPosition.sub(bonePosition).normalize();
+    const correction = new THREE.Quaternion().setFromUnitVectors(currentDirection, targetDirection.clone().normalize());
+    const targetWorldRotation = new THREE.Quaternion();
+    bone.getWorldQuaternion(targetWorldRotation);
+    targetWorldRotation.premultiply(correction);
+
+    const parentWorldRotation = new THREE.Quaternion();
+    bone.parent.getWorldQuaternion(parentWorldRotation);
+    bone.quaternion.copy(parentWorldRotation.invert().multiply(targetWorldRotation));
+  };
+
+  ['Left', 'Right'].forEach((side) => {
+    const sideOffset = side === 'Left' ? 0.07 : -0.07;
+    alignBoneToDirection(`${side}Shoulder`, `${side}Arm`, new THREE.Vector3(sideOffset, -1, 0.02));
+    alignBoneToDirection(`${side}Arm`, `${side}ForeArm`, new THREE.Vector3(sideOffset * 0.5, -1, 0.08));
+    alignBoneToDirection(`${side}ForeArm`, `${side}Hand`, new THREE.Vector3(0, -1, 0.05));
   });
+
+  model.updateMatrixWorld(true);
 }
 
 function applyJosephRestArmPose(model) {
